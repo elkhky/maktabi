@@ -65,7 +65,7 @@ const TABS = [
   { key: "clients", label: "🏢 العملاء" },
 ];
 
-export default function App() {
+function App() {
   const [data, setData] = useState(loadData);
   const { employees, clients, tasks } = data;
   const [tab, setTab] = useState("dashboard");
@@ -164,7 +164,6 @@ export default function App() {
         select option { background: #111827; }
       `}</style>
 
-      {/* Header */}
       <div style={s.header}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={s.logo}>📊</div>
@@ -185,7 +184,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ padding: "12px 20px 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -199,7 +197,6 @@ export default function App() {
 
       <div style={{ padding: "16px 20px" }}>
 
-        {/* DASHBOARD */}
         {tab === "dashboard" && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
@@ -219,7 +216,6 @@ export default function App() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
-              {/* توزيع المهام */}
               <div style={s.card}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>توزيع المهام حسب الحالة</div>
                 {STATUSES.map(st => {
@@ -232,14 +228,13 @@ export default function App() {
                         <span style={{ color: "#94A3B8" }}>{count} ({pct}%)</span>
                       </div>
                       <div style={{ background: "#1E293B", borderRadius: 4, height: 6 }}>
-                        <div style={{ background: STATUS_TEXT[st], height: 6, borderRadius: 4, width: `${pct}%`, transition: "width 0.5s" }}></div>
+                        <div style={{ background: STATUS_TEXT[st], height: 6, borderRadius: 4, width: `${pct}%` }}></div>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* إنجاز الموظفين */}
               <div style={s.card}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>إنجاز الموظفين</div>
                 {employees.map(e => {
@@ -253,14 +248,13 @@ export default function App() {
                         <span style={{ color: e.color, fontWeight: 700 }}>{done}/{total} ({pct}%)</span>
                       </div>
                       <div style={{ background: "#1E293B", borderRadius: 4, height: 5 }}>
-                        <div style={{ background: e.color, height: 5, borderRadius: 4, width: `${pct}%`, transition: "width 0.5s" }}></div>
+                        <div style={{ background: e.color, height: 5, borderRadius: 4, width: `${pct}%` }}></div>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* تنبيهات */}
               <div style={s.card}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>⚠️ تنبيهات المواعيد</div>
                 {alerts.length === 0 && <div style={{ color: "#334155", fontSize: 12, textAlign: "center", padding: "20px 0" }}>لا توجد تنبيهات</div>}
@@ -281,7 +275,6 @@ export default function App() {
           </div>
         )}
 
-        {/* BOARD */}
         {tab === "board" && (
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
@@ -330,7 +323,7 @@ export default function App() {
                           {task.tags?.length > 0 && (
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 5 }}>
                               {task.tags.map((tg, i) => (
-                                <span key={tg} style={{ display: "inline-flex", alignItems: "center", borderRadius: 5, padding: "2px 7px", fontSize: 11, cursor: "pointer", border: "1px solid", color: TAG_COLORS[i % TAG_COLORS.length], borderColor: TAG_COLORS[i % TAG_COLORS.length] + "44", background: TAG_COLORS[i % TAG_COLORS.length] + "11" }}>{tg}</span>
+                                <span key={tg} style={{ display: "inline-flex", alignItems: "center", borderRadius: 5, padding: "2px 7px", fontSize: 11, border: "1px solid", color: TAG_COLORS[i % TAG_COLORS.length], borderColor: TAG_COLORS[i % TAG_COLORS.length] + "44", background: TAG_COLORS[i % TAG_COLORS.length] + "11" }}>{tg}</span>
                               ))}
                             </div>
                           )}
@@ -354,7 +347,6 @@ export default function App() {
           </div>
         )}
 
-        {/* EMPLOYEES */}
         {tab === "employees" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
             {employees.map(emp => {
@@ -376,7 +368,7 @@ export default function App() {
                     <span style={{ fontSize: 11, color: emp.color, fontWeight: 700 }}>{done}/{total} ({pct}%)</span>
                   </div>
                   <div style={{ background: "#1E293B", borderRadius: 4, height: 5, marginBottom: 12 }}>
-                    <div style={{ background: emp.color, height: 5, borderRadius: 4, width: `${pct}%`, transition: "width 0.5s" }}></div>
+                    <div style={{ background: emp.color, height: 5, borderRadius: 4, width: `${pct}%` }}></div>
                   </div>
                   <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                     {STATUSES.map(st => (
@@ -400,7 +392,6 @@ export default function App() {
           </div>
         )}
 
-        {/* CLIENTS */}
         {tab === "clients" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
             {clients.map(client => {
@@ -433,7 +424,6 @@ export default function App() {
         )}
       </div>
 
-      {/* MODAL - Task */}
       {modal?.type === "task" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -479,7 +469,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL - Employee */}
       {modal?.type === "emp" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -500,7 +489,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL - Client */}
       {modal?.type === "client" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -521,3 +509,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
