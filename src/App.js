@@ -2,10 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { db } from "./firebase";
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot,
-  import {
-  collection, doc, setDoc, deleteDoc, onSnapshot,
   addDoc, serverTimestamp, query, orderBy, updateDoc
-} from "firebase/firestore";
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
