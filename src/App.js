@@ -1,42 +1,27 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { db } from "./firebase";
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot,
-  addDoc, serverTimestamp, query, orderBy, updateDoc
+  addDoc, serverTimestamp, query, orderBy, updateDoc, getDoc
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // ========== CONSTANTS ==========
+const APP_NAME = "المركز الاستشاري للمحاسبة";
 const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار العميل", "قيد المراجعة", "تم الإنجاز"];
 const PRIORITIES = ["عالية", "متوسطة", "منخفضة"];
-const ALL_TAGS = ["ضرائب", "رواتب", "عملاء", "ميزانية", "تقارير", "بنوك"];
-const TAG_COLORS = ["#60A5FA", "#34D399", "#A78BFA", "#F59E0B", "#F472B6", "#2DD4BF"];
+const DEFAULT_TAGS = ["ضرائب عامة", "ضرائب قيمة مضافة", "سفر", "مجلس مدينة", "تأمينات", "ميزانيات", "إقرارات"];
+const TAG_COLORS = ["#60A5FA", "#34D399", "#A78BFA", "#F59E0B", "#F472B6", "#2DD4BF", "#FB923C", "#EF4444", "#22C55E", "#818CF8"];
 
 const STATUS_COLOR = {
-  "قيد الانتظار": "#60A5FA",
-  "جاري العمل": "#F59E0B",
-  "بانتظار العميل": "#F472B6",
-  "قيد المراجعة": "#A78BFA",
-  "تم الإنجاز": "#34D399",
+  "قيد الانتظار": "#60A5FA", "جاري العمل": "#F59E0B",
+  "بانتظار العميل": "#F472B6", "قيد المراجعة": "#A78BFA", "تم الإنجاز": "#34D399",
 };
 const STATUS_BG = {
-  "قيد الانتظار": "#1E3A5F",
-  "جاري العمل": "#3B2A0E",
-  "بانتظار العميل": "#3B1A2E",
-  "قيد المراجعة": "#2D2060",
-  "تم الإنجاز": "#1E4D3A",
+  "قيد الانتظار": "#1E3A5F", "جاري العمل": "#3B2A0E",
+  "بانتظار العميل": "#3B1A2E", "قيد المراجعة": "#2D2060", "تم الإنجاز": "#1E4D3A",
 };
 const PRI_COLOR = { "عالية": "#EF4444", "متوسطة": "#F59E0B", "منخفضة": "#22C55E" };
-
-const TABS = [
-  { key: "dashboard", label: "📊 الإحصائيات" },
-  { key: "board", label: "📋 المهام" },
-  { key: "employees", label: "👥 الموظفون" },
-  { key: "clients", label: "🏢 العملاء" },
-  { key: "activity", label: "📜 سجل النشاط" },
-  { key: "calendar", label: "📅 التقويم" },
-  { key: "reports", label: "📈 التقارير" },
-];
-
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const DAYS_AR = ["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
 
@@ -54,7 +39,6 @@ function urgencyInfo(due) {
   return null;
 }
 
-// ========== STYLES ==========
 const s = {
   wrap: { minHeight: "100vh", background: "#0A0F1E", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "#E2E8F0" },
   header: { background: "#0F172A", borderBottom: "1px solid #1E3A5F", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
@@ -67,7 +51,18 @@ const s = {
   modal: { background: "#111827", border: "1px solid #1E3A5F", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" },
 };
 
-// ========== LOGIN SCREEN ==========
+const TABS = [
+  { key: "dashboard", label: "📊 الإحصائيات" },
+  { key: "board", label: "📋 المهام" },
+  { key: "employees", label: "👥 الموظفون" },
+  { key: "clients", label: "🏢 العملاء" },
+  { key: "payments", label: "💰 المدفوعات" },
+  { key: "activity", label: "📜 سجل النشاط" },
+  { key: "calendar", label: "📅 التقويم" },
+  { key: "reports", label: "📈 التقارير" },
+];
+
+// ========== LOGIN ==========
 function LoginScreen({ onLogin, employees }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -84,13 +79,12 @@ function LoginScreen({ onLogin, employees }) {
       <div style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 16, padding: 32, width: 340 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>📊</div>
-          <div style={{ fontWeight: 900, fontSize: 20, color: "#F1F5F9" }}>مكتب المحاسبة</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: "#F1F5F9" }}>{APP_NAME}</div>
           <div style={{ fontSize: 12, color: "#64748B" }}>سجل دخول للمتابعة</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <input style={s.input} placeholder="اسم المستخدم" value={username} onChange={e => setUsername(e.target.value)} />
-          <input style={s.input} type="password" placeholder="كلمة السر" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleLogin()} />
+          <input style={s.input} type="password" placeholder="كلمة السر" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
           {error && <div style={{ color: "#EF4444", fontSize: 12, textAlign: "center" }}>{error}</div>}
           <button style={{ ...s.btnP, padding: "10px", fontSize: 14 }} onClick={handleLogin}>دخول</button>
         </div>
@@ -105,69 +99,76 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [activityLog, setActivityLog] = useState([]);
   const [comments, setComments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [tags, setTags] = useState(DEFAULT_TAGS);
   const [loading, setLoading] = useState(true);
-
   const [tab, setTab] = useState("dashboard");
   const [search, setSearch] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
   const [filterEmp, setFilterEmp] = useState("all");
   const [filterTag, setFilterTag] = useState("all");
   const [sortBy, setSortBy] = useState("due");
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [newTag, setNewTag] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [profileModal, setProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({});
+  const fileInputRef = useRef(null);
+  const storage = getStorage();
 
   const isAdmin = currentUser?.role === "admin";
 
-  // ========== FIREBASE LISTENERS ==========
   useEffect(() => {
     const unsubs = [];
-
     unsubs.push(onSnapshot(collection(db, "employees"), snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setEmployees(data);
+      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }));
-
-    unsubs.push(onSnapshot(collection(db, "tasks"), snap => {
-      setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    unsubs.push(onSnapshot(collection(db, "tasks"), snap => setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(collection(db, "clients"), snap => setClients(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(collection(db, "payments"), snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(query(collection(db, "activity"), orderBy("time", "desc")), snap => setActivityLog(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(collection(db, "comments"), snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(collection(db, "tags"), snap => {
+      if (snap.docs.length > 0) setTags(snap.docs.map(d => d.data().name));
     }));
-
-    unsubs.push(onSnapshot(collection(db, "clients"), snap => {
-      setClients(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }));
-
-    unsubs.push(onSnapshot(query(collection(db, "activity"), orderBy("time", "desc")), snap => {
-      setActivityLog(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }));
-
-    unsubs.push(onSnapshot(collection(db, "comments"), snap => {
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }));
-
     return () => unsubs.forEach(u => u());
   }, []);
 
-  // ========== INIT ADMIN ==========
   useEffect(() => {
     if (!loading && employees.length === 0) {
-      setDoc(doc(db, "employees", "admin"), {
-        name: "المدير", username: "admin", password: "admin123",
-        role: "admin", color: "#2563EB"
-      });
+      setDoc(doc(db, "employees", "admin"), { name: "المدير", username: "admin", password: "admin123", role: "admin", color: "#2563EB", photo: "" });
     }
   }, [loading, employees]);
 
-  // ========== ACTIVITY LOG ==========
-  async function logActivity(action, details) {
-    await addDoc(collection(db, "activity"), {
-      user: currentUser?.name || "مجهول",
-      action, details,
-      time: serverTimestamp()
+  // إشعارات للمستخدم الحالي
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsub = onSnapshot(query(collection(db, "notifications"), orderBy("time", "desc")), snap => {
+      const myNotifs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(n => n.userId === currentUser.id || n.userId === "all");
+      setNotifications(myNotifs);
     });
+    return () => unsub();
+  }, [currentUser]);
+
+  async function logActivity(action, details) {
+    await addDoc(collection(db, "activity"), { user: currentUser?.name || "مجهول", action, details, time: serverTimestamp() });
+  }
+
+  async function sendNotification(userId, message) {
+    await addDoc(collection(db, "notifications"), { userId, message, read: false, time: serverTimestamp() });
+  }
+
+  async function markNotifRead(id) {
+    await updateDoc(doc(db, "notifications", id), { read: true });
   }
 
   // ========== TASKS ==========
@@ -182,9 +183,11 @@ function App() {
     if (form.id) {
       await updateDoc(doc(db, "tasks", form.id), t);
       await logActivity("تعديل مهمة", form.title);
+      if (form.empId && form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تعديل مهمتك: ${form.title}`);
     } else {
       await addDoc(collection(db, "tasks"), { ...t, createdBy: currentUser?.name, createdAt: serverTimestamp() });
       await logActivity("إضافة مهمة", form.title);
+      if (form.empId && form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تعيين مهمة جديدة لك: ${form.title}`);
     }
     setModal(null);
   }
@@ -194,15 +197,24 @@ function App() {
     await logActivity("حذف مهمة", title);
   }
 
-  async function moveTask(id, status, title) {
+  async function moveTask(id, status, title, empId) {
     await updateDoc(doc(db, "tasks", id), { status, updatedBy: currentUser?.name, updatedAt: serverTimestamp() });
     await logActivity("تغيير حالة", `${title} ← ${status}`);
+    if (empId && empId !== currentUser?.id) await sendNotification(empId, `تم تغيير حالة مهمتك "${title}" إلى ${status}`);
+  }
+
+  async function transferTask(taskId, newEmpId, title) {
+    const emp = employees.find(e => e.id === newEmpId);
+    await updateDoc(doc(db, "tasks", taskId), { empId: newEmpId, updatedBy: currentUser?.name, updatedAt: serverTimestamp() });
+    await logActivity("نقل مهمة", `${title} ← ${emp?.name}`);
+    await sendNotification(newEmpId, `تم نقل مهمة إليك: ${title}`);
+    setModal(null);
   }
 
   // ========== EMPLOYEES ==========
   async function saveEmp() {
     if (!form.name?.trim() || !form.username?.trim() || !form.password?.trim()) return;
-    const e = { name: form.name, username: form.username, password: form.password, role: form.role || "employee", color: form.color || "#60A5FA" };
+    const e = { name: form.name, username: form.username, password: form.password, role: form.role || "employee", color: form.color || "#60A5FA", photo: form.photo || "" };
     if (form.id) {
       await updateDoc(doc(db, "employees", form.id), e);
       await logActivity("تعديل موظف", form.name);
@@ -216,6 +228,25 @@ function App() {
   async function deleteEmp(id, name) {
     await deleteDoc(doc(db, "employees", id));
     await logActivity("حذف موظف", name);
+  }
+
+  // ========== PROFILE ==========
+  async function saveProfile() {
+    if (!profileForm.name?.trim()) return;
+    await updateDoc(doc(db, "employees", currentUser.id), {
+      name: profileForm.name,
+      password: profileForm.password || currentUser.password,
+      photo: profileForm.photo || currentUser.photo || ""
+    });
+    setCurrentUser({ ...currentUser, name: profileForm.name, password: profileForm.password || currentUser.password, photo: profileForm.photo || currentUser.photo });
+    setProfileModal(false);
+  }
+
+  async function uploadPhoto(file, type, id) {
+    const storageRef = ref(storage, `${type}/${id}_${Date.now()}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    return url;
   }
 
   // ========== CLIENTS ==========
@@ -237,23 +268,58 @@ function App() {
     await logActivity("حذف عميل", name);
   }
 
+  // ========== PAYMENTS ==========
+  async function savePayment() {
+    if (!form.clientId || !form.amount) return;
+    const p = {
+      clientId: form.clientId, amount: parseFloat(form.amount),
+      type: form.type || "كاش", status: form.status || "مدفوع",
+      date: form.date || new Date().toISOString().split("T")[0],
+      notes: form.notes || "", createdBy: currentUser?.name, createdAt: serverTimestamp()
+    };
+    if (form.id) {
+      await updateDoc(doc(db, "payments", form.id), p);
+    } else {
+      await addDoc(collection(db, "payments"), p);
+      await logActivity("إضافة مدفوعة", `${getClient(form.clientId)?.name} - ${form.amount} ج.م`);
+    }
+    setModal(null);
+  }
+
+  async function deletePayment(id) {
+    await deleteDoc(doc(db, "payments", id));
+  }
+
   // ========== COMMENTS ==========
-  async function addComment(taskId) {
+  async function addComment(taskId, taskTitle, empId) {
     if (!newComment.trim()) return;
-    await addDoc(collection(db, "comments"), {
-      taskId, text: newComment, user: currentUser?.name,
-      time: serverTimestamp()
-    });
+    await addDoc(collection(db, "comments"), { taskId, text: newComment, user: currentUser?.name, time: serverTimestamp() });
+    if (empId && empId !== currentUser?.id) await sendNotification(empId, `تعليق جديد على مهمتك: ${taskTitle}`);
     setNewComment("");
+  }
+
+  // ========== TAGS ==========
+  async function addNewTag() {
+    if (!newTag.trim() || tags.includes(newTag.trim())) return;
+    await addDoc(collection(db, "tags"), { name: newTag.trim() });
+    setNewTag("");
   }
 
   // ========== HELPERS ==========
   const getEmp = id => employees.find(e => e.id === id);
   const getClient = id => clients.find(c => c.id === id);
   const alerts = tasks.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) <= 3);
+  const unreadNotifs = notifications.filter(n => !n.read).length;
+
+  const sortedClients = useMemo(() => {
+    return [...clients]
+      .filter(c => c.name?.includes(clientSearch))
+      .sort((a, b) => a.name?.localeCompare(b.name, "ar"));
+  }, [clients, clientSearch]);
 
   const filtered = useMemo(() => {
     let t = tasks;
+    if (!isAdmin) t = t.filter(x => x.empId === currentUser?.id || true);
     if (filterEmp !== "all") t = t.filter(x => x.empId === filterEmp);
     if (filterTag !== "all") t = t.filter(x => x.tags && x.tags.includes(filterTag));
     if (search.trim()) t = t.filter(x => x.title?.includes(search.trim()));
@@ -263,16 +329,15 @@ function App() {
       t = [...t].sort((a, b) => (order[a.priority] || 0) - (order[b.priority] || 0));
     }
     return t;
-  }, [tasks, filterEmp, filterTag, search, sortBy]);
+  }, [tasks, filterEmp, filterTag, search, sortBy, isAdmin, currentUser]);
 
-  const byStatus = s => filtered.filter(t => t.status === s);
+  const byStatus = st => filtered.filter(t => t.status === st);
 
   function toggleTag(tag) {
-    const tags = form.tags || [];
-    setForm({ ...form, tags: tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag] });
+    const tgs = form.tags || [];
+    setForm({ ...form, tags: tgs.includes(tag) ? tgs.filter(t => t !== tag) : [...tgs, tag] });
   }
 
-  // ========== CALENDAR ==========
   function getCalendarDays() {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
@@ -289,21 +354,19 @@ function App() {
     return tasks.filter(t => t.due === dateStr);
   }
 
-  // ========== REPORTS ==========
-  function getMonthlyStats() {
-    const now = new Date();
-    const thisMonth = tasks.filter(t => {
-      if (!t.createdAt) return false;
-      const d = t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  function exportCSV() {
+    const rows = [["العميل", "المبلغ", "النوع", "الحالة", "التاريخ", "ملاحظات"]];
+    payments.forEach(p => {
+      const client = getClient(p.clientId);
+      rows.push([client?.name || "", p.amount, p.type, p.status, p.date, p.notes]);
     });
-    return {
-      total: thisMonth.length,
-      done: thisMonth.filter(t => t.status === "تم الإنجاز").length,
-      inProgress: thisMonth.filter(t => t.status === "جاري العمل").length,
-      late: thisMonth.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length,
-    };
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "payments.csv"; a.click();
   }
+
+  function printReport() { window.print(); }
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#0A0F1E", display: "flex", alignItems: "center", justifyContent: "center", color: "#60A5FA", fontFamily: "'Cairo',sans-serif", fontSize: 18 }}>
@@ -311,10 +374,11 @@ function App() {
     </div>
   );
 
-  if (!currentUser) return <LoginScreen onLogin={setCurrentUser} employees={employees} />;
+  if (!currentUser) return <LoginScreen onLogin={emp => setCurrentUser(emp)} employees={employees} />;
 
-  const monthlyStats = getMonthlyStats();
   const { days, year, month } = getCalendarDays();
+
+  const totalPayments = payments.reduce((sum, p) => sum + (p.status === "مدفوع" ? parseFloat(p.amount) || 0 : 0), 0);
 
   return (
     <div style={s.wrap}>
@@ -324,28 +388,57 @@ function App() {
         ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0A0F1E; } ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 3px; }
         .task-card { transition: all 0.2s; } .task-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
         select option { background: #111827; }
+        @media print { .no-print { display: none !important; } }
       `}</style>
 
       {/* HEADER */}
-      <div style={s.header}>
+      <div style={s.header} className="no-print">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 38, height: 38, background: "#2563EB", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📊</div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 17, color: "#F1F5F9" }}>مكتب المحاسبة</div>
+            <div style={{ fontWeight: 900, fontSize: 15, color: "#F1F5F9" }}>{APP_NAME}</div>
             <div style={{ fontSize: 11, color: "#64748B" }}>أهلاً {currentUser.name} {isAdmin ? "👑" : ""}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {alerts.length > 0 && <div style={{ background: "#2D1B0E", border: "1px solid #EF4444", color: "#EF4444", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>⚠️ {alerts.length} مهمة تستحق التنبيه</div>}
+          {alerts.length > 0 && <div style={{ background: "#2D1B0E", border: "1px solid #EF4444", color: "#EF4444", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>⚠️ {alerts.length}</div>}
+
+          {/* زرار الإشعارات */}
+          <div style={{ position: "relative" }}>
+            <button style={{ ...s.btnG, padding: "8px 12px", position: "relative" }} onClick={() => setShowNotifications(!showNotifications)}>
+              🔔 {unreadNotifs > 0 && <span style={{ position: "absolute", top: -4, right: -4, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNotifs}</span>}
+            </button>
+            {showNotifications && (
+              <div style={{ position: "absolute", top: 44, left: 0, background: "#111827", border: "1px solid #1E3A5F", borderRadius: 10, width: 280, maxHeight: 300, overflowY: "auto", zIndex: 300, padding: 8 }}>
+                {notifications.length === 0 && <div style={{ color: "#64748B", fontSize: 12, textAlign: "center", padding: 12 }}>لا توجد إشعارات</div>}
+                {notifications.slice(0, 10).map(n => (
+                  <div key={n.id} onClick={() => markNotifRead(n.id)} style={{ padding: "8px 10px", borderRadius: 7, marginBottom: 4, background: n.read ? "transparent" : "#1E3A5F22", cursor: "pointer", borderRight: n.read ? "none" : "3px solid #2563EB" }}>
+                    <div style={{ fontSize: 12, color: n.read ? "#64748B" : "#CBD5E1" }}>{n.message}</div>
+                    <div style={{ fontSize: 10, color: "#475569" }}>{n.time?.toDate ? n.time.toDate().toLocaleString("ar-EG") : ""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* زرار تحديث */}
+          <button style={{ ...s.btnG, padding: "8px 12px" }} onClick={() => window.location.reload()} title="تحديث">🔄</button>
+
+          {/* صورة الموظف */}
+          <div onClick={() => { setProfileForm({ name: currentUser.name, password: "", photo: currentUser.photo }); setProfileModal(true); }} style={{ width: 34, height: 34, borderRadius: "50%", background: currentUser.color + "33", border: `2px solid ${currentUser.color}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+            {currentUser.photo ? <img src={currentUser.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: currentUser.color, fontWeight: 700, fontSize: 14 }}>{currentUser.name[0]}</span>}
+          </div>
+
           <button style={s.btnP} onClick={() => { setForm({ title: "", empId: "", clientId: "", status: "قيد الانتظار", priority: "متوسطة", due: "", notes: "", tags: [] }); setModal("task"); }}>+ مهمة</button>
-          {isAdmin && <button style={s.btnG} onClick={() => { setForm({ name: "", username: "", password: "", role: "employee", color: "#60A5FA" }); setModal("emp"); }}>+ موظف</button>}
+          {isAdmin && <button style={s.btnG} onClick={() => { setForm({ name: "", username: "", password: "", role: "employee", color: "#60A5FA", photo: "" }); setModal("emp"); }}>+ موظف</button>}
           {isAdmin && <button style={s.btnG} onClick={() => { setForm({ name: "", phone: "", email: "", notes: "" }); setModal("client"); }}>+ عميل</button>}
+          <button style={s.btnG} onClick={() => { setForm({ clientId: "", amount: "", type: "كاش", status: "مدفوع", date: new Date().toISOString().split("T")[0], notes: "" }); setModal("payment"); }}>+ مدفوعة</button>
           <button style={s.btnR} onClick={() => setCurrentUser(null)}>خروج</button>
         </div>
       </div>
 
       {/* TABS */}
-      <div style={{ padding: "12px 20px 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ padding: "12px 20px 0", display: "flex", gap: 6, flexWrap: "wrap" }} className="no-print">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: "7px 14px", borderRadius: 8, border: tab === t.key ? "none" : "1px solid #1E3A5F",
@@ -367,10 +460,10 @@ function App() {
                 { label: "تم الإنجاز", val: tasks.filter(t => t.status === "تم الإنجاز").length, color: "#34D399" },
                 { label: "متأخرة", val: tasks.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length, color: "#EF4444" },
                 { label: "الموظفون", val: employees.length, color: "#F472B6" },
-                { label: "العملاء", val: clients.length, color: "#A78BFA" },
+                { label: "إجمالي المدفوعات", val: `${totalPayments.toLocaleString()} ج`, color: "#34D399" },
               ].map((st, i) => (
                 <div key={i} style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: st.color }}>{st.val}</div>
+                  <div style={{ fontSize: i === 5 ? 16 : 26, fontWeight: 900, color: st.color }}>{st.val}</div>
                   <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>{st.label}</div>
                 </div>
               ))}
@@ -444,7 +537,7 @@ function App() {
               </select>
               <select style={{ ...s.input, width: "auto" }} value={filterTag} onChange={e => setFilterTag(e.target.value)}>
                 <option value="all">كل التاغات</option>
-                {ALL_TAGS.map(t => <option key={t}>{t}</option>)}
+                {tags.map(t => <option key={t}>{t}</option>)}
               </select>
               <select style={{ ...s.input, width: "auto" }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="due">ترتيب: التاريخ</option>
@@ -467,45 +560,49 @@ function App() {
                       const client = getClient(task.clientId);
                       const urg = urgencyInfo(task.due);
                       const taskComments = comments.filter(c => c.taskId === task.id);
+                      const canEdit = isAdmin || task.empId === currentUser?.id;
                       return (
-                        <div key={task.id} className="task-card" style={{ background: "#111827", border: `1px solid ${urg ? urg.color + "55" : "#1E293B"}`, borderRadius: 10, padding: 12, cursor: "pointer" }}
-                          onClick={() => setSelectedTask(task)}>
+                        <div key={task.id} className="task-card" style={{ background: "#111827", border: `1px solid ${urg ? urg.color + "55" : "#1E293B"}`, borderRadius: 10, padding: 12, cursor: "pointer" }} onClick={() => setSelectedTask(task)}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
                             <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.4, flex: 1 }}>{task.title}</span>
                             <span style={{ background: PRI_COLOR[task.priority] + "22", color: PRI_COLOR[task.priority], borderRadius: 5, padding: "1px 6px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{task.priority}</span>
                           </div>
                           {emp && (
                             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-                              <div style={{ width: 18, height: 18, borderRadius: "50%", background: emp.color + "33", border: `1.5px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: emp.color, fontWeight: 700 }}>{emp.name[0]}</div>
+                              <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", background: emp.color + "33", border: `1.5px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {emp.photo ? <img src={emp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: emp.color, fontWeight: 700 }}>{emp.name[0]}</span>}
+                              </div>
                               <span style={{ fontSize: 10, color: "#94A3B8" }}>{emp.name}</span>
                               {client && <span style={{ fontSize: 10, color: "#64748B" }}>• {client.name}</span>}
                             </div>
                           )}
                           {task.tags?.length > 0 && (
                             <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
-                              {task.tags.map((tg, i) => <span key={tg} style={{ color: TAG_COLORS[i % TAG_COLORS.length], background: TAG_COLORS[i % TAG_COLORS.length] + "11", border: `1px solid ${TAG_COLORS[i % TAG_COLORS.length]}44`, borderRadius: 4, padding: "1px 6px", fontSize: 10 }}>{tg}</span>)}
+                              {task.tags.map((tg, i) => <span key={tg} style={{ color: TAG_COLORS[i % TAG_COLORS.length], background: TAG_COLORS[i % TAG_COLORS.length] + "11", border: `1px solid ${TAG_COLORS[i % TAG_COLORS.length]}44`, borderRadius: 4, padding: "1px 5px", fontSize: 9 }}>{tg}</span>)}
                             </div>
                           )}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-                            <div style={{ display: "flex", gap: 8 }}>
-                              {task.due && <span style={{ fontSize: 10, color: urg ? urg.color : "#475569" }}>📅 {task.due}</span>}
-                              {taskComments.length > 0 && <span style={{ fontSize: 10, color: "#64748B" }}>💬 {taskComments.length}</span>}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {task.due && <span style={{ fontSize: 9, color: urg ? urg.color : "#475569" }}>📅 {task.due}</span>}
+                              {taskComments.length > 0 && <span style={{ fontSize: 9, color: "#64748B" }}>💬 {taskComments.length}</span>}
                             </div>
                           </div>
-                          <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
-                            {STATUSES.filter(s => s !== status).map(s => (
-                              <button key={s} onClick={e => { e.stopPropagation(); moveTask(task.id, s, task.title); }}
-                                style={{ background: STATUS_BG[s], color: STATUS_COLOR[s], border: "none", borderRadius: 5, padding: "2px 6px", fontSize: 9, cursor: "pointer", fontFamily: "inherit" }}>{s}</button>
-                            ))}
-                            {(isAdmin || task.empId === currentUser?.id) && (
-                              <>
-                                <button onClick={e => { e.stopPropagation(); setForm({ ...task }); setModal("task"); }}
-                                  style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 5, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>✏️</button>
-                                {isAdmin && <button onClick={e => { e.stopPropagation(); deleteTask(task.id, task.title); }}
-                                  style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 5, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>}
-                              </>
-                            )}
-                          </div>
+                          {canEdit && (
+                            <div style={{ display: "flex", gap: 3, marginTop: 8, flexWrap: "wrap" }}>
+                              {STATUSES.filter(s => s !== status).map(s => (
+                                <button key={s} onClick={e => { e.stopPropagation(); moveTask(task.id, s, task.title, task.empId); }}
+                                  style={{ background: STATUS_BG[s], color: STATUS_COLOR[s], border: "none", borderRadius: 4, padding: "2px 5px", fontSize: 8, cursor: "pointer", fontFamily: "inherit" }}>{s}</button>
+                              ))}
+                              <button onClick={e => { e.stopPropagation(); setForm({ ...task }); setModal("task"); }}
+                                style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>✏️</button>
+                              {isAdmin && <>
+                                <button onClick={e => { e.stopPropagation(); setForm({ taskId: task.id, title: task.title, currentEmpId: task.empId }); setModal("transfer"); }}
+                                  style={{ background: "#1E4D3A", color: "#34D399", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>نقل</button>
+                                <button onClick={e => { e.stopPropagation(); deleteTask(task.id, task.title); }}
+                                  style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>
+                              </>}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -527,7 +624,9 @@ function App() {
               return (
                 <div key={emp.id} style={{ ...s.card, border: `1px solid ${emp.color}33` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: emp.color + "22", border: `2px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: emp.color, fontWeight: 900 }}>{emp.name[0]}</div>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: emp.color + "22", border: `2px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {emp.photo ? <img src={emp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 20, color: emp.color, fontWeight: 900 }}>{emp.name[0]}</span>}
+                    </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{emp.name} {emp.role === "admin" ? "👑" : ""}</div>
                       <div style={{ fontSize: 11, color: "#64748B" }}>@{emp.username}</div>
@@ -562,57 +661,121 @@ function App() {
 
         {/* ===== CLIENTS ===== */}
         {tab === "clients" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
-            {clients.map(client => {
-              const clientTasks = tasks.filter(t => t.clientId === client.id);
-              const done = clientTasks.filter(t => t.status === "تم الإنجاز").length;
-              return (
-                <div key={client.id} style={s.card}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏢</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{client.name}</div>
-                      <div style={{ fontSize: 11, color: "#64748B" }}>{client.phone}</div>
-                    </div>
-                    {isAdmin && (
+          <div>
+            <div style={{ marginBottom: 14 }}>
+              <input style={{ ...s.input, maxWidth: 260 }} placeholder="🔍 ابحث بأول حرف..." value={clientSearch} onChange={e => setClientSearch(e.target.value)} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+              {sortedClients.map(client => {
+                const clientTasks = tasks.filter(t => t.clientId === client.id);
+                const done = clientTasks.filter(t => t.status === "تم الإنجاز").length;
+                const clientPayments = payments.filter(p => p.clientId === client.id);
+                const totalPaid = clientPayments.filter(p => p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                return (
+                  <div key={client.id} style={s.card}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏢</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{client.name}</div>
+                        <div style={{ fontSize: 11, color: "#64748B" }}>{client.phone}</div>
+                      </div>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button onClick={() => { setForm({ ...client }); setModal("client"); }} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
-                        <button onClick={() => deleteClient(client.id, client.name)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>🗑</button>
+                        <button onClick={() => setSelectedClient(client)} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>📁</button>
+                        {isAdmin && <>
+                          <button onClick={() => { setForm({ ...client }); setModal("client"); }} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                          <button onClick={() => deleteClient(client.id, client.name)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>🗑</button>
+                        </>}
                       </div>
-                    )}
+                    </div>
+                    {client.email && <div style={{ fontSize: 11, color: "#60A5FA", marginBottom: 8 }}>📧 {client.email}</div>}
+                    <div style={{ display: "flex", gap: 10, fontSize: 12, marginBottom: 8 }}>
+                      <span style={{ color: "#60A5FA" }}>📋 {clientTasks.length} مهمة</span>
+                      <span style={{ color: "#34D399" }}>✅ {done} مكتملة</span>
+                      <span style={{ color: "#F59E0B" }}>💰 {totalPaid.toLocaleString()} ج</span>
+                    </div>
                   </div>
-                  {client.email && <div style={{ fontSize: 11, color: "#60A5FA", marginBottom: 8 }}>📧 {client.email}</div>}
-                  <div style={{ borderTop: "1px solid #1E293B", paddingTop: 10 }}>
-                    <div style={{ fontSize: 11, color: "#64748B", marginBottom: 6 }}>المهام: {clientTasks.length} • مكتملة: {done}</div>
-                    {clientTasks.slice(0, 3).map(t => (
-                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#94A3B8", marginBottom: 4 }}>
-                        <span style={{ color: STATUS_COLOR[t.status], fontSize: 8 }}>●</span>
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* ===== ACTIVITY LOG ===== */}
+        {/* ===== PAYMENTS ===== */}
+        {tab === "payments" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8" }}>💰 كشف المدفوعات</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={s.btnG} onClick={exportCSV}>📥 Excel</button>
+                <button style={s.btnG} onClick={printReport}>🖨️ طباعة</button>
+              </div>
+            </div>
+
+            {/* ملخص */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "إجمالي المدفوعات", val: payments.filter(p => p.status === "مدفوع").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0), color: "#34D399" },
+                { label: "جزئي", val: payments.filter(p => p.status === "جزئي").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0), color: "#F59E0B" },
+                { label: "غير مدفوع", val: payments.filter(p => p.status === "لم يدفع").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0), color: "#EF4444" },
+                { label: "عدد العمليات", val: payments.length, color: "#60A5FA" },
+              ].map((st, i) => (
+                <div key={i} style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: st.color }}>{typeof st.val === "number" && i < 3 ? `${st.val.toLocaleString()} ج` : st.val}</div>
+                  <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>{st.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* جدول المدفوعات */}
+            <div style={s.card}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #1E293B" }}>
+                    {["العميل", "المبلغ", "النوع", "الحالة", "التاريخ", "بواسطة", ""].map((h, i) => (
+                      <th key={i} style={{ padding: "8px 10px", color: "#64748B", fontWeight: 600, textAlign: "right" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1).map(p => {
+                    const client = getClient(p.clientId);
+                    return (
+                      <tr key={p.id} style={{ borderBottom: "1px solid #0F172A" }}>
+                        <td style={{ padding: "8px 10px", color: "#CBD5E1" }}>{client?.name || "-"}</td>
+                        <td style={{ padding: "8px 10px", color: "#34D399", fontWeight: 700 }}>{parseFloat(p.amount).toLocaleString()} ج</td>
+                        <td style={{ padding: "8px 10px", color: "#94A3B8" }}>{p.type}</td>
+                        <td style={{ padding: "8px 10px" }}>
+                          <span style={{ background: p.status === "مدفوع" ? "#1E4D3A" : p.status === "جزئي" ? "#3B2A0E" : "#2D1B1B", color: p.status === "مدفوع" ? "#34D399" : p.status === "جزئي" ? "#F59E0B" : "#EF4444", borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{p.status}</span>
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#64748B" }}>{p.date}</td>
+                        <td style={{ padding: "8px 10px", color: "#64748B" }}>{p.createdBy}</td>
+                        <td style={{ padding: "8px 10px" }}>
+                          {isAdmin && <button onClick={() => deletePayment(p.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 10, cursor: "pointer" }}>🗑</button>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {payments.length === 0 && <div style={{ color: "#334155", textAlign: "center", padding: 20, fontSize: 13 }}>لا توجد مدفوعات بعد</div>}
+            </div>
+          </div>
+        )}
+
+        {/* ===== ACTIVITY ===== */}
         {tab === "activity" && (
           <div style={s.card}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8", marginBottom: 16 }}>📜 سجل النشاط</div>
             {activityLog.length === 0 && <div style={{ color: "#334155", textAlign: "center", padding: 20 }}>لا يوجد نشاط بعد</div>}
             {activityLog.map(log => (
-              <div key={log.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: "1px solid #1E293B" }}>
+              <div key={log.id} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid #1E293B" }}>
                 <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
-                <div style={{ flex: 1 }}>
+                <div>
                   <div style={{ fontSize: 13, color: "#CBD5E1" }}>
                     <span style={{ color: "#60A5FA", fontWeight: 700 }}>{log.user}</span> — {log.action}
                     {log.details && <span style={{ color: "#94A3B8" }}> "{log.details}"</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-                    {log.time?.toDate ? log.time.toDate().toLocaleString("ar-EG") : "الآن"}
-                  </div>
+                  <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{log.time?.toDate ? log.time.toDate().toLocaleString("ar-EG") : "الآن"}</div>
                 </div>
               </div>
             ))}
@@ -653,19 +816,12 @@ function App() {
         {/* ===== REPORTS ===== */}
         {tab === "reports" && (
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8", marginBottom: 16 }}>📈 تقرير هذا الشهر</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 20 }}>
-              {[
-                { label: "مهام جديدة", val: monthlyStats.total, color: "#60A5FA" },
-                { label: "تم الإنجاز", val: monthlyStats.done, color: "#34D399" },
-                { label: "جاري العمل", val: monthlyStats.inProgress, color: "#F59E0B" },
-                { label: "متأخرة", val: monthlyStats.late, color: "#EF4444" },
-              ].map((st, i) => (
-                <div key={i} style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 16, textAlign: "center" }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: st.color }}>{st.val}</div>
-                  <div style={{ fontSize: 12, color: "#64748B", marginTop: 4 }}>{st.label}</div>
-                </div>
-              ))}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8" }}>📈 التقارير</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={s.btnG} onClick={exportCSV}>📥 Excel</button>
+                <button style={s.btnG} onClick={printReport}>🖨️ PDF / طباعة</button>
+              </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
               <div style={s.card}>
@@ -675,7 +831,7 @@ function App() {
                   const done = tasks.filter(t => t.empId === e.id && t.status === "تم الإنجاز").length;
                   const late = tasks.filter(t => t.empId === e.id && t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length;
                   return (
-                    <div key={e.id} style={{ marginBottom: 14, padding: 10, background: "#111827", borderRadius: 8 }}>
+                    <div key={e.id} style={{ marginBottom: 12, padding: 10, background: "#111827", borderRadius: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                         <span style={{ color: "#CBD5E1", fontWeight: 600 }}>{e.name}</span>
                         <span style={{ color: e.color, fontSize: 12 }}>{total} مهمة</span>
@@ -690,33 +846,47 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>المهام حسب العميل</div>
-                {clients.map(c => {
-                  const clientTasks = tasks.filter(t => t.clientId === c.id);
-                  const done = clientTasks.filter(t => t.status === "تم الإنجاز").length;
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>المدفوعات حسب العميل</div>
+                {sortedClients.map(c => {
+                  const clientPayments = payments.filter(p => p.clientId === c.id);
+                  const totalPaid = clientPayments.filter(p => p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                  const pending = clientPayments.filter(p => p.status !== "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                  if (clientPayments.length === 0) return null;
                   return (
-                    <div key={c.id} style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: "#CBD5E1" }}>{c.name}</span>
-                      <div style={{ display: "flex", gap: 8, fontSize: 11 }}>
-                        <span style={{ color: "#60A5FA" }}>{clientTasks.length} مهمة</span>
-                        <span style={{ color: "#34D399" }}>{done} مكتملة</span>
+                    <div key={c.id} style={{ marginBottom: 10, padding: 8, background: "#111827", borderRadius: 8 }}>
+                      <div style={{ fontWeight: 600, color: "#CBD5E1", marginBottom: 4, fontSize: 12 }}>{c.name}</div>
+                      <div style={{ display: "flex", gap: 10, fontSize: 11 }}>
+                        <span style={{ color: "#34D399" }}>مدفوع: {totalPaid.toLocaleString()} ج</span>
+                        {pending > 0 && <span style={{ color: "#EF4444" }}>متبقي: {pending.toLocaleString()} ج</span>}
                       </div>
                     </div>
                   );
                 })}
-                {clients.length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا يوجد عملاء</div>}
+              </div>
+              <div style={s.card}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>المهام حسب التاغ</div>
+                {tags.map((tg, i) => {
+                  const count = tasks.filter(t => t.tags?.includes(tg)).length;
+                  if (count === 0) return null;
+                  return (
+                    <div key={tg} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center" }}>
+                      <span style={{ color: TAG_COLORS[i % TAG_COLORS.length], fontSize: 12 }}>{tg}</span>
+                      <span style={{ color: "#94A3B8", fontSize: 12 }}>{count} مهمة</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ===== TASK DETAIL MODAL ===== */}
+      {/* ===== TASK DETAIL ===== */}
       {selectedTask && (
         <div style={s.overlay} onClick={() => setSelectedTask(null)}>
           <div style={{ ...s.modal, maxWidth: 500 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", margin: 0, flex: 1 }}>{selectedTask.title}</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#F1F5F9", margin: 0, flex: 1 }}>{selectedTask.title}</h3>
               <button onClick={() => setSelectedTask(null)} style={{ background: "none", border: "none", color: "#64748B", fontSize: 18, cursor: "pointer" }}>✕</button>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
@@ -726,30 +896,112 @@ function App() {
             </div>
             {selectedTask.notes && <div style={{ background: "#0F172A", borderRadius: 8, padding: 10, fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>{selectedTask.notes}</div>}
             {selectedTask.createdBy && <div style={{ fontSize: 11, color: "#475569", marginBottom: 12 }}>أضافها: {selectedTask.createdBy} • آخر تعديل: {selectedTask.updatedBy || "-"}</div>}
-
-            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12, marginTop: 4 }}>
+            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 10 }}>💬 التعليقات</div>
               <div style={{ maxHeight: 160, overflowY: "auto", marginBottom: 10 }}>
                 {comments.filter(c => c.taskId === selectedTask.id).map(c => (
                   <div key={c.id} style={{ background: "#0F172A", borderRadius: 8, padding: 8, marginBottom: 6 }}>
                     <div style={{ fontSize: 11, color: "#60A5FA", fontWeight: 700, marginBottom: 2 }}>{c.user}</div>
                     <div style={{ fontSize: 12, color: "#CBD5E1" }}>{c.text}</div>
-                    <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{c.time?.toDate ? c.time.toDate().toLocaleString("ar-EG") : "الآن"}</div>
+                    <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{c.time?.toDate ? c.time.toDate().toLocaleString("ar-EG") : ""}</div>
                   </div>
                 ))}
                 {comments.filter(c => c.taskId === selectedTask.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد تعليقات بعد</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <input style={{ ...s.input, flex: 1 }} placeholder="اكتب تعليق..." value={newComment} onChange={e => setNewComment(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addComment(selectedTask.id)} />
-                <button style={s.btnP} onClick={() => addComment(selectedTask.id)}>إرسال</button>
+                <input style={{ ...s.input, flex: 1 }} placeholder="اكتب تعليق..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => e.key === "Enter" && addComment(selectedTask.id, selectedTask.title, selectedTask.empId)} />
+                <button style={s.btnP} onClick={() => addComment(selectedTask.id, selectedTask.title, selectedTask.empId)}>إرسال</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== TASK FORM MODAL ===== */}
+      {/* ===== CLIENT DETAIL ===== */}
+      {selectedClient && (
+        <div style={s.overlay} onClick={() => setSelectedClient(null)}>
+          <div style={{ ...s.modal, maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>📁 ملف {selectedClient.name}</h3>
+              <button onClick={() => setSelectedClient(null)} style={{ background: "none", border: "none", color: "#64748B", fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>
+              {selectedClient.phone && <div>📞 {selectedClient.phone}</div>}
+              {selectedClient.email && <div>📧 {selectedClient.email}</div>}
+              {selectedClient.notes && <div style={{ marginTop: 6, color: "#94A3B8" }}>{selectedClient.notes}</div>}
+            </div>
+
+            {/* سجل الأعمال */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📋 سجل الأعمال</div>
+              {tasks.filter(t => t.clientId === selectedClient.id).map(t => (
+                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#CBD5E1", fontWeight: 600 }}>{t.title}</div>
+                    <div style={{ fontSize: 10, color: "#64748B" }}>{getEmp(t.empId)?.name} • {t.due}</div>
+                  </div>
+                  <span style={{ background: STATUS_BG[t.status], color: STATUS_COLOR[t.status], borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{t.status}</span>
+                </div>
+              ))}
+              {tasks.filter(t => t.clientId === selectedClient.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مهام</div>}
+            </div>
+
+            {/* سجل المدفوعات */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>💰 سجل المدفوعات</div>
+              {payments.filter(p => p.clientId === selectedClient.id).map(p => (
+                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#34D399", fontWeight: 700 }}>{parseFloat(p.amount).toLocaleString()} ج</div>
+                    <div style={{ fontSize: 10, color: "#64748B" }}>{p.type} • {p.date}</div>
+                  </div>
+                  <span style={{ background: p.status === "مدفوع" ? "#1E4D3A" : "#2D1B1B", color: p.status === "مدفوع" ? "#34D399" : "#EF4444", borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{p.status}</span>
+                </div>
+              ))}
+              {payments.filter(p => p.clientId === selectedClient.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مدفوعات</div>}
+
+              <div style={{ marginTop: 10, padding: 10, background: "#0F172A", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#94A3B8", fontSize: 12 }}>إجمالي المدفوع</span>
+                <span style={{ color: "#34D399", fontWeight: 700, fontSize: 14 }}>
+                  {payments.filter(p => p.clientId === selectedClient.id && p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()} ج
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== PROFILE MODAL ===== */}
+      {profileModal && (
+        <div style={s.overlay} onClick={() => setProfileModal(false)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>⚙️ إعدادات حسابي</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: 70, height: 70, borderRadius: "50%", overflow: "hidden", background: currentUser.color + "33", border: `2px solid ${currentUser.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", cursor: "pointer" }} onClick={() => fileInputRef.current?.click()}>
+                  {profileForm.photo ? <img src={profileForm.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 28, color: currentUser.color, fontWeight: 900 }}>{currentUser.name[0]}</span>}
+                </div>
+                <button style={{ ...s.btnG, fontSize: 11, padding: "4px 12px" }} onClick={() => fileInputRef.current?.click()}>تغيير الصورة</button>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const url = await uploadPhoto(file, "employees", currentUser.id);
+                    setProfileForm({ ...profileForm, photo: url });
+                  }
+                }} />
+              </div>
+              <input style={s.input} placeholder="الاسم *" value={profileForm.name || ""} onChange={e => setProfileForm({ ...profileForm, name: e.target.value })} />
+              <input style={s.input} type="password" placeholder="كلمة السر الجديدة (اتركها فارغة لو مش عايز تغيرها)" value={profileForm.password || ""} onChange={e => setProfileForm({ ...profileForm, password: e.target.value })} />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button style={s.btnG} onClick={() => setProfileModal(false)}>إلغاء</button>
+                <button style={s.btnP} onClick={saveProfile}>حفظ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== TASK FORM ===== */}
       {modal === "task" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -762,7 +1014,7 @@ function App() {
               </select>
               <select style={s.input} value={form.clientId || ""} onChange={e => setForm({ ...form, clientId: e.target.value })}>
                 <option value="">-- بدون عميل --</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {sortedClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <select style={s.input} value={form.status || "قيد الانتظار"} onChange={e => setForm({ ...form, status: e.target.value })}>
@@ -775,16 +1027,17 @@ function App() {
               <input type="date" style={s.input} value={form.due || ""} onChange={e => setForm({ ...form, due: e.target.value })} />
               <div>
                 <div style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>التاغات:</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {ALL_TAGS.map((tg, i) => (
-                    <span key={tg} onClick={() => toggleTag(tg)} style={{
-                      display: "inline-flex", alignItems: "center", borderRadius: 5, padding: "3px 9px", fontSize: 12, cursor: "pointer", border: "1px solid",
-                      color: TAG_COLORS[i % TAG_COLORS.length],
-                      borderColor: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "" : "44"),
-                      background: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "33" : "11"),
-                    }}>{tg}</span>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                  {tags.map((tg, i) => (
+                    <span key={tg} onClick={() => toggleTag(tg)} style={{ display: "inline-flex", alignItems: "center", borderRadius: 5, padding: "3px 9px", fontSize: 11, cursor: "pointer", border: "1px solid", color: TAG_COLORS[i % TAG_COLORS.length], borderColor: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "" : "44"), background: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "33" : "11") }}>{tg}</span>
                   ))}
                 </div>
+                {isAdmin && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input style={{ ...s.input, flex: 1 }} placeholder="تاغ جديد..." value={newTag} onChange={e => setNewTag(e.target.value)} />
+                    <button style={{ ...s.btnP, padding: "6px 12px", fontSize: 12 }} onClick={addNewTag}>+ إضافة</button>
+                  </div>
+                )}
               </div>
               <textarea rows={2} style={s.input} placeholder="ملاحظات" value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -796,7 +1049,27 @@ function App() {
         </div>
       )}
 
-      {/* ===== EMPLOYEE FORM MODAL ===== */}
+      {/* ===== TRANSFER TASK ===== */}
+      {modal === "transfer" && (
+        <div style={s.overlay} onClick={() => setModal(null)}>
+          <div style={{ ...s.modal, maxWidth: 360 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>🔄 نقل المهمة</h3>
+            <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 12 }}>"{form.title}"</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <select style={s.input} value={form.newEmpId || ""} onChange={e => setForm({ ...form, newEmpId: e.target.value })}>
+                <option value="">-- اختر موظف --</option>
+                {employees.filter(e => e.id !== form.currentEmpId).map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
+                <button style={s.btnP} onClick={() => form.newEmpId && transferTask(form.taskId, form.newEmpId, form.title)}>نقل</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== EMPLOYEE FORM ===== */}
       {modal === "emp" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -822,7 +1095,7 @@ function App() {
         </div>
       )}
 
-      {/* ===== CLIENT FORM MODAL ===== */}
+      {/* ===== CLIENT FORM ===== */}
       {modal === "client" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -835,6 +1108,40 @@ function App() {
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
                 <button style={s.btnP} onClick={saveClient}>حفظ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== PAYMENT FORM ===== */}
+      {modal === "payment" && (
+        <div style={s.overlay} onClick={() => setModal(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>💰 إضافة مدفوعة</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <select style={s.input} value={form.clientId || ""} onChange={e => setForm({ ...form, clientId: e.target.value })}>
+                <option value="">-- اختر عميل --</option>
+                {sortedClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <input style={s.input} type="number" placeholder="المبلغ (ج.م) *" value={form.amount || ""} onChange={e => setForm({ ...form, amount: e.target.value })} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <select style={s.input} value={form.type || "كاش"} onChange={e => setForm({ ...form, type: e.target.value })}>
+                  <option>كاش</option>
+                  <option>تحويل بنكي</option>
+                  <option>شيك</option>
+                </select>
+                <select style={s.input} value={form.status || "مدفوع"} onChange={e => setForm({ ...form, status: e.target.value })}>
+                  <option>مدفوع</option>
+                  <option>جزئي</option>
+                  <option>لم يدفع</option>
+                </select>
+              </div>
+              <input type="date" style={s.input} value={form.date || ""} onChange={e => setForm({ ...form, date: e.target.value })} />
+              <textarea rows={2} style={s.input} placeholder="ملاحظات" value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
+                <button style={s.btnP} onClick={savePayment}>حفظ</button>
               </div>
             </div>
           </div>
