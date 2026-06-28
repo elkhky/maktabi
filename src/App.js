@@ -25,6 +25,23 @@ const PRI_COLOR = { "عالية": "#EF4444", "متوسطة": "#F59E0B", "منخ�
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const DAYS_AR = ["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
 
+
+// ========== CLOUDINARY ==========
+const CLOUD_NAME = "dgplus11j";
+const UPLOAD_PRESET = "maktabi";
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("resource_type", "auto");
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+    method: "POST", body: formData
+  });
+  const data = await res.json();
+  return { url: data.secure_url, name: file.name, type: file.type, size: file.size };
+}
+
 function daysDiff(due) {
   if (!due) return null;
   const now = new Date(); now.setHours(0,0,0,0);
@@ -118,6 +135,8 @@ function App() {
   const [newComment, setNewComment] = useState("");
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [newTag, setNewTag] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [profileModal, setProfileModal] = useState(false);
   const [profileForm, setProfileForm] = useState({});
@@ -137,6 +156,7 @@ function App() {
     unsubs.push(onSnapshot(collection(db, "payments"), snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(query(collection(db, "activity"), orderBy("time", "desc")), snap => setActivityLog(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "comments"), snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(collection(db, "attachments"), snap => setAttachments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "tags"), snap => {
       if (snap.docs.length > 0) setTags(snap.docs.map(d => d.data().name));
     }));
@@ -288,6 +308,27 @@ function App() {
 
   async function deletePayment(id) {
     await deleteDoc(doc(db, "payments", id));
+  }
+
+
+  // ========== ATTACHMENTS ==========
+  async function uploadAttachment(file, entityType, entityId, entityName) {
+    setUploading(true);
+    try {
+      const uploaded = await uploadToCloudinary(file);
+      await addDoc(collection(db, "attachments"), {
+        entityType, entityId, entityName,
+        url: uploaded.url, name: uploaded.name,
+        fileType: uploaded.type, size: uploaded.size,
+        uploadedBy: currentUser?.name, uploadedAt: serverTimestamp()
+      });
+      await logActivity("رفع مرفق", `${uploaded.name} على ${entityName}`);
+    } catch(e) { console.error(e); }
+    setUploading(false);
+  }
+
+  async function deleteAttachment(id) {
+    await deleteDoc(doc(db, "attachments", id));
   }
 
   // ========== COMMENTS ==========
@@ -896,6 +937,25 @@ function App() {
             </div>
             {selectedTask.notes && <div style={{ background: "#0F172A", borderRadius: 8, padding: 10, fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>{selectedTask.notes}</div>}
             {selectedTask.createdBy && <div style={{ fontSize: 11, color: "#475569", marginBottom: 12 }}>أضافها: {selectedTask.createdBy} • آخر تعديل: {selectedTask.updatedBy || "-"}</div>}
+            {/* مرفقات المهمة */}
+            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📎 مرفقات المهمة</div>
+              <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px", marginBottom: 8 }}>
+                {uploading ? "جاري الرفع..." : "+ رفع ملف"}
+                <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async e => {
+                  const file = e.target.files[0];
+                  if (file) await uploadAttachment(file, "task", selectedTask.id, selectedTask.title);
+                }} />
+              </label>
+              {attachments.filter(a => a.entityId === selectedTask.id).map(a => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#0F172A", borderRadius: 7, marginBottom: 5 }}>
+                  <span>{a.fileType?.includes("pdf") ? "📄" : "🖼️"}</span>
+                  <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 11, flex: 1, textDecoration: "none" }}>{a.name}</a>
+                  <button onClick={() => deleteAttachment(a.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>
+                </div>
+              ))}
+            </div>
+
             <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 10 }}>💬 التعليقات</div>
               <div style={{ maxHeight: 160, overflowY: "auto", marginBottom: 10 }}>
