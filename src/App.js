@@ -8,18 +8,18 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // ========== CONSTANTS ==========
 const APP_NAME = "المركز الاستشاري للمحاسبة";
-const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار العميل", "قيد المراجعة", "تم الإنجاز"];
+const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار النواقص", "قيد المراجعة", "تم الإنجاز"];
 const PRIORITIES = ["عالية", "متوسطة", "منخفضة"];
 const DEFAULT_TAGS = ["ضرائب عامة", "ضرائب قيمة مضافة", "سفر", "مجلس مدينة", "تأمينات", "ميزانيات", "إقرارات"];
 const TAG_COLORS = ["#60A5FA", "#34D399", "#A78BFA", "#F59E0B", "#F472B6", "#2DD4BF", "#FB923C", "#EF4444", "#22C55E", "#818CF8"];
 
 const STATUS_COLOR = {
   "قيد الانتظار": "#60A5FA", "جاري العمل": "#F59E0B",
-  "بانتظار العميل": "#F472B6", "قيد المراجعة": "#A78BFA", "تم الإنجاز": "#34D399",
+  "بانتظار النواقص": "#F472B6", "قيد المراجعة": "#A78BFA", "تم الإنجاز": "#34D399",
 };
 const STATUS_BG = {
   "قيد الانتظار": "#1E3A5F", "جاري العمل": "#3B2A0E",
-  "بانتظار العميل": "#3B1A2E", "قيد المراجعة": "#2D2060", "تم الإنجاز": "#1E4D3A",
+  "بانتظار النواقص": "#3B1A2E", "قيد المراجعة": "#2D2060", "تم الإنجاز": "#1E4D3A",
 };
 const PRI_COLOR = { "عالية": "#EF4444", "متوسطة": "#F59E0B", "منخفضة": "#22C55E" };
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
@@ -169,7 +169,6 @@ function App() {
     }
   }, [loading, employees]);
 
-  // إشعارات للمستخدم الحالي
   useEffect(() => {
     if (!currentUser) return;
     const unsub = onSnapshot(query(collection(db, "notifications"), orderBy("time", "desc")), snap => {
@@ -310,7 +309,6 @@ function App() {
     await deleteDoc(doc(db, "payments", id));
   }
 
-
   // ========== ATTACHMENTS ==========
   async function uploadAttachment(file, entityType, entityId, entityName) {
     setUploading(true);
@@ -418,7 +416,6 @@ function App() {
   if (!currentUser) return <LoginScreen onLogin={emp => setCurrentUser(emp)} employees={employees} />;
 
   const { days, year, month } = getCalendarDays();
-
   const totalPayments = payments.reduce((sum, p) => sum + (p.status === "مدفوع" ? parseFloat(p.amount) || 0 : 0), 0);
 
   return (
@@ -444,7 +441,6 @@ function App() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {alerts.length > 0 && <div style={{ background: "#2D1B0E", border: "1px solid #EF4444", color: "#EF4444", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>⚠️ {alerts.length}</div>}
 
-          {/* زرار الإشعارات */}
           <div style={{ position: "relative" }}>
             <button style={{ ...s.btnG, padding: "8px 12px", position: "relative" }} onClick={() => setShowNotifications(!showNotifications)}>
               🔔 {unreadNotifs > 0 && <span style={{ position: "absolute", top: -4, right: -4, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNotifs}</span>}
@@ -462,10 +458,8 @@ function App() {
             )}
           </div>
 
-          {/* زرار تحديث */}
           <button style={{ ...s.btnG, padding: "8px 12px" }} onClick={() => window.location.reload()} title="تحديث">🔄</button>
 
-          {/* صورة الموظف */}
           <div onClick={() => { setProfileForm({ name: currentUser.name, password: "", photo: currentUser.photo }); setProfileModal(true); }} style={{ width: 34, height: 34, borderRadius: "50%", background: currentUser.color + "33", border: `2px solid ${currentUser.color}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
             {currentUser.photo ? <img src={currentUser.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: currentUser.color, fontWeight: 700, fontSize: 14 }}>{currentUser.name[0]}</span>}
           </div>
@@ -751,8 +745,6 @@ function App() {
                 <button style={s.btnG} onClick={printReport}>🖨️ طباعة</button>
               </div>
             </div>
-
-            {/* ملخص */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 16 }}>
               {[
                 { label: "إجمالي المدفوعات", val: payments.filter(p => p.status === "مدفوع").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0), color: "#34D399" },
@@ -766,8 +758,6 @@ function App() {
                 </div>
               ))}
             </div>
-
-            {/* جدول المدفوعات */}
             <div style={s.card}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
@@ -937,7 +927,6 @@ function App() {
             </div>
             {selectedTask.notes && <div style={{ background: "#0F172A", borderRadius: 8, padding: 10, fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>{selectedTask.notes}</div>}
             {selectedTask.createdBy && <div style={{ fontSize: 11, color: "#475569", marginBottom: 12 }}>أضافها: {selectedTask.createdBy} • آخر تعديل: {selectedTask.updatedBy || "-"}</div>}
-            {/* مرفقات المهمة */}
             <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12, marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📎 مرفقات المهمة</div>
               <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px", marginBottom: 8 }}>
@@ -955,7 +944,6 @@ function App() {
                 </div>
               ))}
             </div>
-
             <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 10 }}>💬 التعليقات</div>
               <div style={{ maxHeight: 160, overflowY: "auto", marginBottom: 10 }}>
@@ -1007,8 +995,19 @@ function App() {
             </div>
 
             {/* سجل المدفوعات */}
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>💰 سجل المدفوعات</div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8" }}>💰 سجل المدفوعات</div>
+                <button
+                  onClick={() => {
+                    setSelectedClient(null);
+                    setForm({ clientId: selectedClient.id, amount: "", type: "كاش", status: "مدفوع", date: new Date().toISOString().split("T")[0], notes: "" });
+                    setModal("payment");
+                  }}
+                  style={{ background: "#1E4D3A", color: "#34D399", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+                  + إضافة مدفوعة
+                </button>
+              </div>
               {payments.filter(p => p.clientId === selectedClient.id).map(p => (
                 <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
                   <div>
@@ -1019,13 +1018,37 @@ function App() {
                 </div>
               ))}
               {payments.filter(p => p.clientId === selectedClient.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مدفوعات</div>}
-
               <div style={{ marginTop: 10, padding: 10, background: "#0F172A", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#94A3B8", fontSize: 12 }}>إجمالي المدفوع</span>
                 <span style={{ color: "#34D399", fontWeight: 700, fontSize: 14 }}>
                   {payments.filter(p => p.clientId === selectedClient.id && p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()} ج
                 </span>
               </div>
+            </div>
+
+            {/* مرفقات العميل */}
+            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📎 مرفقات العميل</div>
+              <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px", marginBottom: 10 }}>
+                {uploading ? "⏳ جاري الرفع..." : "+ رفع ملف"}
+                <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" style={{ display: "none" }} onChange={async e => {
+                  const file = e.target.files[0];
+                  if (file) await uploadAttachment(file, "client", selectedClient.id, selectedClient.name);
+                }} />
+              </label>
+              {attachments.filter(a => a.entityId === selectedClient.id && a.entityType === "client").length === 0 && (
+                <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مرفقات</div>
+              )}
+              {attachments.filter(a => a.entityId === selectedClient.id && a.entityType === "client").map(a => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 16 }}>
+                    {a.fileType?.includes("pdf") ? "📄" : a.fileType?.includes("image") ? "🖼️" : a.fileType?.includes("sheet") || a.name?.endsWith(".xlsx") ? "📊" : "📁"}
+                  </span>
+                  <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 12, flex: 1, textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</a>
+                  <span style={{ fontSize: 10, color: "#475569", whiteSpace: "nowrap" }}>{a.uploadedBy}</span>
+                  <button onClick={() => deleteAttachment(a.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 7px", fontSize: 10, cursor: "pointer" }}>🗑</button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
