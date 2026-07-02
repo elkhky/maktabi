@@ -27,7 +27,7 @@ const DAYS_AR = ["أحد","اثنين","ثلاثاء","أربعاء","خميس",
 
 
 // ========== CLOUDINARY ==========
-const CLOUD_NAME = "dgplusl1j";
+const CLOUD_NAME = "dgplus1lj";
 const UPLOAD_PRESET = "maktabi";
 
 async function uploadToCloudinary(file) {
