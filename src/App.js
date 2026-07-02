@@ -57,13 +57,13 @@ function urgencyInfo(due) {
 }
 
 const s = {
-  wrap: { minHeight: "100vh", background: "#0A0F1E", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "#E2E8F0" },
+  wrap: { minHeight: "100vh", background: "#0A0F1E", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "#F1F5F9", fontSize: 15 },
   header: { background: "#0F172A", borderBottom: "1px solid #1E3A5F", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
-  btnP: { background: "#2563EB", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 13 },
-  btnG: { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#94A3B8", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 13 },
-  btnR: { background: "#2D1B1B", color: "#EF4444", border: "1px solid #EF444433", padding: "6px 12px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 },
+  btnP: { background: "#2563EB", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
+  btnG: { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#CBD5E1", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
+  btnR: { background: "#3B1414", color: "#FCA5A5", border: "1px solid #EF444455", padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 13 },
   card: { background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 12, padding: 16 },
-  input: { background: "#111827", border: "1px solid #1E3A5F", color: "#E2E8F0", padding: "9px 12px", borderRadius: 8, fontFamily: "inherit", fontSize: 13, width: "100%", outline: "none" },
+  input: { background: "#111827", border: "1px solid #1E3A5F", color: "#F1F5F9", padding: "10px 13px", borderRadius: 8, fontFamily: "inherit", fontSize: 14, width: "100%", outline: "none" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 },
   modal: { background: "#111827", border: "1px solid #1E3A5F", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" },
 };
@@ -140,10 +140,29 @@ function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [profileModal, setProfileModal] = useState(false);
   const [profileForm, setProfileForm] = useState({});
+  const [undoToast, setUndoToast] = useState(null);
   const fileInputRef = useRef(null);
   const storage = getStorage();
 
   const isAdmin = currentUser?.role === "admin";
+
+  // ===== UNDO SYSTEM =====
+  function showUndoToast(message, undoFn) {
+    const toastId = Date.now();
+    setUndoToast({ message, undoFn, id: toastId });
+    setTimeout(() => {
+      setUndoToast(curr => (curr && curr.id === toastId ? null : curr));
+    }, 60000);
+  }
+  function dismissUndo() {
+    setUndoToast(null);
+  }
+  async function runUndo() {
+    if (undoToast?.undoFn) {
+      await undoToast.undoFn();
+    }
+    setUndoToast(null);
+  }
 
   useEffect(() => {
     const unsubs = [];
@@ -212,8 +231,15 @@ function App() {
   }
 
   async function deleteTask(id, title) {
+    const snap = tasks.find(t => t.id === id);
     await deleteDoc(doc(db, "tasks", id));
     await logActivity("حذف مهمة", title);
+    if (snap) {
+      const { id: _id, ...rest } = snap;
+      showUndoToast(`تم حذف "${title}"`, async () => {
+        await addDoc(collection(db, "tasks"), rest);
+      });
+    }
   }
 
   async function moveTask(id, status, title, empId) {
@@ -233,7 +259,7 @@ function App() {
   // ========== EMPLOYEES ==========
   async function saveEmp() {
     if (!form.name?.trim() || !form.username?.trim() || !form.password?.trim()) return;
-    const e = { name: form.name, username: form.username, password: form.password, role: form.role || "employee", color: form.color || "#60A5FA", photo: form.photo || "" };
+    const e = { name: form.name, username: form.username, password: form.password, role: form.role || "employee", color: form.color || "#60A5FA", photo: form.photo ?? "" };
     if (form.id) {
       await updateDoc(doc(db, "employees", form.id), e);
       await logActivity("تعديل موظف", form.name);
@@ -245,19 +271,27 @@ function App() {
   }
 
   async function deleteEmp(id, name) {
+    const snap = employees.find(e => e.id === id);
     await deleteDoc(doc(db, "employees", id));
     await logActivity("حذف موظف", name);
+    if (snap) {
+      const { id: _id, ...rest } = snap;
+      showUndoToast(`تم حذف الموظف "${name}"`, async () => {
+        await addDoc(collection(db, "employees"), rest);
+      });
+    }
   }
 
   // ========== PROFILE ==========
   async function saveProfile() {
     if (!profileForm.name?.trim()) return;
+    const newPhoto = profileForm.photo ?? currentUser.photo ?? "";
     await updateDoc(doc(db, "employees", currentUser.id), {
       name: profileForm.name,
       password: profileForm.password || currentUser.password,
-      photo: profileForm.photo || currentUser.photo || ""
+      photo: newPhoto
     });
-    setCurrentUser({ ...currentUser, name: profileForm.name, password: profileForm.password || currentUser.password, photo: profileForm.photo || currentUser.photo });
+    setCurrentUser({ ...currentUser, name: profileForm.name, password: profileForm.password || currentUser.password, photo: newPhoto });
     setProfileModal(false);
   }
 
@@ -283,8 +317,15 @@ function App() {
   }
 
   async function deleteClient(id, name) {
+    const snap = clients.find(c => c.id === id);
     await deleteDoc(doc(db, "clients", id));
     await logActivity("حذف عميل", name);
+    if (snap) {
+      const { id: _id, ...rest } = snap;
+      showUndoToast(`تم حذف العميل "${name}"`, async () => {
+        await addDoc(collection(db, "clients"), rest);
+      });
+    }
   }
 
   // ========== PAYMENTS ==========
@@ -306,7 +347,14 @@ function App() {
   }
 
   async function deletePayment(id) {
+    const snap = payments.find(p => p.id === id);
     await deleteDoc(doc(db, "payments", id));
+    if (snap) {
+      const { id: _id, ...rest } = snap;
+      showUndoToast(`تم حذف المدفوعة`, async () => {
+        await addDoc(collection(db, "payments"), rest);
+      });
+    }
   }
 
   // ========== ATTACHMENTS ==========
@@ -325,8 +373,12 @@ function App() {
     setUploading(false);
   }
 
-  async function deleteAttachment(id) {
-    await deleteDoc(doc(db, "attachments", id));
+  async function deleteAttachment(att) {
+    await deleteDoc(doc(db, "attachments", att.id));
+    showUndoToast(`تم حذف "${att.name}"`, async () => {
+      const { id, ...rest } = att;
+      await addDoc(collection(db, "attachments"), rest);
+    });
   }
 
   // ========== COMMENTS ==========
@@ -940,7 +992,7 @@ function App() {
                 <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#0F172A", borderRadius: 7, marginBottom: 5 }}>
                   <span>{a.fileType?.includes("pdf") ? "📄" : "🖼️"}</span>
                   <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 11, flex: 1, textDecoration: "none" }}>{a.name}</a>
-                  <button onClick={() => deleteAttachment(a.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>
+                  <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>
                 </div>
               ))}
             </div>
@@ -1046,7 +1098,7 @@ function App() {
                   </span>
                   <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 12, flex: 1, textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</a>
                   <span style={{ fontSize: 10, color: "#475569", whiteSpace: "nowrap" }}>{a.uploadedBy}</span>
-                  <button onClick={() => deleteAttachment(a.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 7px", fontSize: 10, cursor: "pointer" }}>🗑</button>
+                  <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 7px", fontSize: 10, cursor: "pointer" }}>🗑</button>
                 </div>
               ))}
             </div>
@@ -1064,7 +1116,18 @@ function App() {
                 <div style={{ width: 70, height: 70, borderRadius: "50%", overflow: "hidden", background: currentUser.color + "33", border: `2px solid ${currentUser.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", cursor: "pointer" }} onClick={() => fileInputRef.current?.click()}>
                   {profileForm.photo ? <img src={profileForm.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 28, color: currentUser.color, fontWeight: 900 }}>{currentUser.name[0]}</span>}
                 </div>
-                <button style={{ ...s.btnG, fontSize: 11, padding: "4px 12px" }} onClick={() => fileInputRef.current?.click()}>تغيير الصورة</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button style={{ ...s.btnG, fontSize: 12, padding: "5px 14px" }} onClick={() => fileInputRef.current?.click()}>تغيير الصورة</button>
+                  {profileForm.photo && (
+                    <button style={{ ...s.btnR, fontSize: 12, padding: "5px 14px" }} onClick={() => {
+                      const prevPhoto = profileForm.photo;
+                      setProfileForm({ ...profileForm, photo: "" });
+                      showUndoToast("تم حذف الصورة (لم يتم الحفظ بعد)", async () => {
+                        setProfileForm(f => ({ ...f, photo: prevPhoto }));
+                      });
+                    }}>🗑 حذف الصورة</button>
+                  )}
+                </div>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
                   const file = e.target.files[0];
                   if (file) {
@@ -1158,6 +1221,22 @@ function App() {
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>{form.id ? "✏️ تعديل موظف" : "👤 موظف جديد"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {form.id && (
+                <div style={{ textAlign: "center", marginBottom: 6 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: "50%", overflow: "hidden", background: (form.color || "#60A5FA") + "33", border: `2px solid ${form.color || "#60A5FA"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                    {form.photo ? <img src={form.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 24, color: form.color || "#60A5FA", fontWeight: 900 }}>{form.name?.[0]}</span>}
+                  </div>
+                  {form.photo && (
+                    <button style={{ ...s.btnR, fontSize: 12, padding: "5px 14px" }} onClick={() => {
+                      const prevPhoto = form.photo;
+                      setForm(f => ({ ...f, photo: "" }));
+                      showUndoToast("تم حذف صورة الموظف (لم يتم الحفظ بعد)", async () => {
+                        setForm(f => ({ ...f, photo: prevPhoto }));
+                      });
+                    }}>🗑 حذف الصورة</button>
+                  )}
+                </div>
+              )}
               <input style={s.input} placeholder="الاسم *" value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} />
               <input style={s.input} placeholder="اسم المستخدم *" value={form.username || ""} onChange={e => setForm({ ...form, username: e.target.value })} />
               <input style={s.input} type="password" placeholder="كلمة السر *" value={form.password || ""} onChange={e => setForm({ ...form, password: e.target.value })} />
@@ -1166,7 +1245,7 @@ function App() {
                 <option value="admin">Admin 👑</option>
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <label style={{ color: "#94A3B8", fontSize: 12 }}>اللون:</label>
+                <label style={{ color: "#94A3B8", fontSize: 13 }}>اللون:</label>
                 <input type="color" value={form.color || "#60A5FA"} onChange={e => setForm({ ...form, color: e.target.value })} style={{ width: 44, height: 32, padding: 2, background: "none", border: "1px solid #1E3A5F", borderRadius: 6, cursor: "pointer" }} />
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -1228,6 +1307,20 @@ function App() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===== UNDO TOAST ===== */}
+      {undoToast && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          background: "#111827", border: "1px solid #2563EB", borderRadius: 12,
+          padding: "12px 18px", display: "flex", alignItems: "center", gap: 14,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.5)", zIndex: 500, maxWidth: "92vw"
+        }}>
+          <span style={{ fontSize: 14, color: "#F1F5F9", fontWeight: 600 }}>{undoToast.message}</span>
+          <button onClick={runUndo} style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>↩ تراجع</button>
+          <button onClick={dismissUndo} style={{ background: "none", border: "none", color: "#64748B", fontSize: 16, cursor: "pointer", padding: 0 }}>✕</button>
         </div>
       )}
     </div>
