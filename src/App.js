@@ -35,8 +35,8 @@ async function uploadToCloudinary(file) {
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
   formData.append("resource_type", "auto");
-const res = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/auto/upload", {
-  method: "POST", body: formData
+  const res = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/auto/upload", {
+    method: "POST", body: formData
   });
   const data = await res.json();
   return { url: data.secure_url, name: file.name, type: file.type, size: file.size };
