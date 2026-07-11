@@ -158,7 +158,6 @@ function App() {
   const [motivationMsg, setMotivationMsg] = useState(null);
   const [managerMsg, setManagerMsg] = useState("");
   const [managerMsgInput, setManagerMsgInput] = useState("");
-  const [showManagerMsgPanel, setShowManagerMsgPanel] = useState(false);
   const fileInputRef = useRef(null);
 
   const isAdmin = currentUser?.role === "admin";
