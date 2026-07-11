@@ -4,7 +4,20 @@ import {
   collection, doc, setDoc, deleteDoc, onSnapshot,
   addDoc, serverTimestamp, query, orderBy, updateDoc
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+// ========== MOTIVATIONAL MESSAGES ==========
+const MOTIVATIONAL_MSGS = [
+  "🌟 أحسنت! إنجازك يلهم الجميع!",
+  "🔥 رائع! استمر في هذا التميز!",
+  "💪 عمل ممتاز! أنت تصنع الفرق!",
+  "🚀 إنجاز جديد يُضاف لسجلك المشرف!",
+  "🏆 بطل! هكذا يُكتب النجاح!",
+  "⭐ تألقت اليوم كما تتألق دائماً!",
+  "🎯 أصبت الهدف! هذا هو الاحتراف!",
+  "💡 عقلك الرائع يُحوّل التحديات لإنجازات!",
+  "🌈 كل مهمة تُكملها تقربك من قمة النجاح!",
+  "🦁 شجاع ومُثابر — هذا ما يميزك!",
+];
 
 // ========== CONSTANTS ==========
 const APP_NAME = "المركز الاستشاري للمحاسبة";
@@ -27,7 +40,7 @@ const DAYS_AR = ["أحد","اثنين","ثلاثاء","أربعاء","خميس",
 
 
 // ========== CLOUDINARY ==========
-const CLOUD_NAME = "dgplus1lj";
+const CLOUD_NAME = "dgplusl1j";
 const UPLOAD_PRESET = "maktabi";
 
 async function uploadToCloudinary(file) {
@@ -35,7 +48,7 @@ async function uploadToCloudinary(file) {
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
   formData.append("resource_type", "auto");
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+  const res = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/auto/upload", {
     method: "POST", body: formData
   });
   const data = await res.json();
@@ -77,6 +90,7 @@ const TABS = [
   { key: "activity", label: "📜 سجل النشاط" },
   { key: "calendar", label: "📅 التقويم" },
   { key: "reports", label: "📈 التقارير" },
+  { key: "managermsg", label: "💬 رسالة المدير" },
 ];
 
 // ========== LOGIN ==========
@@ -141,8 +155,11 @@ function App() {
   const [profileModal, setProfileModal] = useState(false);
   const [profileForm, setProfileForm] = useState({});
   const [undoToast, setUndoToast] = useState(null);
+  const [motivationMsg, setMotivationMsg] = useState(null);
+  const [managerMsg, setManagerMsg] = useState("");
+  const [managerMsgInput, setManagerMsgInput] = useState("");
+  const [showManagerMsgPanel, setShowManagerMsgPanel] = useState(false);
   const fileInputRef = useRef(null);
-  const storage = getStorage();
 
   const isAdmin = currentUser?.role === "admin";
 
@@ -178,6 +195,9 @@ function App() {
     unsubs.push(onSnapshot(collection(db, "attachments"), snap => setAttachments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "tags"), snap => {
       if (snap.docs.length > 0) setTags(snap.docs.map(d => d.data().name));
+    }));
+    unsubs.push(onSnapshot(doc(db, "settings", "managerMsg"), snap => {
+      if (snap.exists()) setManagerMsg(snap.data().text || "");
     }));
     return () => unsubs.forEach(u => u());
   }, []);
@@ -216,6 +236,7 @@ function App() {
       title: form.title, empId: form.empId || "", clientId: form.clientId || "",
       status: form.status || "قيد الانتظار", priority: form.priority || "متوسطة",
       due: form.due || "", notes: form.notes || "", tags: form.tags || [],
+      amount: form.amount || "", amountStatus: form.amountStatus || "لم يدفع",
       updatedBy: currentUser?.name, updatedAt: serverTimestamp()
     };
     if (form.id) {
@@ -226,6 +247,15 @@ function App() {
       await addDoc(collection(db, "tasks"), { ...t, createdBy: currentUser?.name, createdAt: serverTimestamp() });
       await logActivity("إضافة مهمة", form.title);
       if (form.empId && form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تعيين مهمة جديدة لك: ${form.title}`);
+    }
+    // لو فيه مبلغ، نضيفه تلقائياً في المدفوعات
+    if (form.amount && form.clientId && !form.id) {
+      await addDoc(collection(db, "payments"), {
+        clientId: form.clientId, amount: parseFloat(form.amount),
+        type: "كاش", status: form.amountStatus || "لم يدفع",
+        date: form.due || new Date().toISOString().split("T")[0],
+        notes: `مهمة: ${form.title}`, createdBy: currentUser?.name, createdAt: serverTimestamp()
+      });
     }
     setModal(null);
   }
@@ -246,6 +276,11 @@ function App() {
     await updateDoc(doc(db, "tasks", id), { status, updatedBy: currentUser?.name, updatedAt: serverTimestamp() });
     await logActivity("تغيير حالة", `${title} ← ${status}`);
     if (empId && empId !== currentUser?.id) await sendNotification(empId, `تم تغيير حالة مهمتك "${title}" إلى ${status}`);
+    if (status === "تم الإنجاز") {
+      const msg = MOTIVATIONAL_MSGS[Math.floor(Math.random() * MOTIVATIONAL_MSGS.length)];
+      setMotivationMsg(msg);
+      setTimeout(() => setMotivationMsg(null), 4000);
+    }
   }
 
   async function transferTask(taskId, newEmpId, title) {
@@ -295,11 +330,9 @@ function App() {
     setProfileModal(false);
   }
 
-  async function uploadPhoto(file, type, id) {
-    const storageRef = ref(storage, `${type}/${id}_${Date.now()}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    return url;
+  async function uploadPhoto(file) {
+    const uploaded = await uploadToCloudinary(file);
+    return uploaded.url;
   }
 
   // ========== CLIENTS ==========
@@ -962,6 +995,50 @@ function App() {
             </div>
           </div>
         )}
+        {/* ===== MANAGER MESSAGE ===== */}
+        {tab === "managermsg" && (
+          <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            {/* الرسالة الحالية */}
+            {managerMsg && (
+              <div style={{ background: "linear-gradient(135deg, #1E3A5F, #2D2060)", border: "1px solid #60A5FA44", borderRadius: 14, padding: 24, marginBottom: 20, textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>📢</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", lineHeight: 1.8 }}>{managerMsg}</div>
+                <div style={{ fontSize: 12, color: "#64748B", marginTop: 10 }}>رسالة من الإدارة</div>
+              </div>
+            )}
+            {!managerMsg && (
+              <div style={{ ...s.card, textAlign: "center", padding: 32, marginBottom: 20 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
+                <div style={{ color: "#64748B", fontSize: 14 }}>لا توجد رسالة حالياً</div>
+              </div>
+            )}
+            {/* نموذج تعديل الرسالة للمدير فقط */}
+            {isAdmin && (
+              <div style={s.card}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>✏️ تعديل الرسالة</div>
+                <textarea
+                  rows={4}
+                  style={{ ...s.input, marginBottom: 12, resize: "vertical" }}
+                  placeholder="اكتب رسالتك للموظفين هنا..."
+                  value={managerMsgInput}
+                  onChange={e => setManagerMsgInput(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button style={s.btnR} onClick={async () => {
+                    await setDoc(doc(db, "settings", "managerMsg"), { text: "" });
+                    setManagerMsgInput("");
+                  }}>مسح الرسالة</button>
+                  <button style={s.btnP} onClick={async () => {
+                    if (!managerMsgInput.trim()) return;
+                    await setDoc(doc(db, "settings", "managerMsg"), { text: managerMsgInput.trim() });
+                    setManagerMsgInput("");
+                    await logActivity("رسالة مدير", managerMsgInput.trim().slice(0, 50));
+                  }}>نشر الرسالة</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ===== TASK DETAIL ===== */}
@@ -1131,7 +1208,7 @@ function App() {
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
                   const file = e.target.files[0];
                   if (file) {
-                    const url = await uploadPhoto(file, "employees", currentUser.id);
+                    const url = await uploadPhoto(file);
                     setProfileForm({ ...profileForm, photo: url });
                   }
                 }} />
@@ -1186,6 +1263,19 @@ function App() {
                 )}
               </div>
               <textarea rows={2} style={s.input} placeholder="ملاحظات" value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              {/* خانة المدفوعات */}
+              <div style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 13, color: "#F59E0B", fontWeight: 700, marginBottom: 10 }}>💰 المدفوعات (اختياري)</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <input style={s.input} type="number" placeholder="المبلغ (ج.م)" value={form.amount || ""} onChange={e => setForm({ ...form, amount: e.target.value })} />
+                  <select style={s.input} value={form.amountStatus || "لم يدفع"} onChange={e => setForm({ ...form, amountStatus: e.target.value })}>
+                    <option>مدفوع</option>
+                    <option>جزئي</option>
+                    <option>لم يدفع</option>
+                  </select>
+                </div>
+                {form.amount && <div style={{ fontSize: 11, color: "#64748B", marginTop: 6 }}>سيتم إضافة هذا المبلغ تلقائياً لكشف المدفوعات</div>}
+              </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
                 <button style={s.btnP} onClick={saveTask}>حفظ</button>
@@ -1321,6 +1411,36 @@ function App() {
           <span style={{ fontSize: 14, color: "#F1F5F9", fontWeight: 600 }}>{undoToast.message}</span>
           <button onClick={runUndo} style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>↩ تراجع</button>
           <button onClick={dismissUndo} style={{ background: "none", border: "none", color: "#64748B", fontSize: 16, cursor: "pointer", padding: 0 }}>✕</button>
+        </div>
+      )}
+
+      {/* ===== MOTIVATION POPUP ===== */}
+      {motivationMsg && (
+        <div style={{
+          position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          background: "linear-gradient(135deg, #1E4D3A, #2D2060)",
+          border: "2px solid #34D399", borderRadius: 20,
+          padding: "32px 40px", textAlign: "center",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.7)", zIndex: 600, maxWidth: "90vw"
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#F1F5F9", lineHeight: 1.6 }}>{motivationMsg}</div>
+          <div style={{ fontSize: 13, color: "#34D399", marginTop: 10 }}>تم الإنجاز بنجاح!</div>
+        </div>
+      )}
+
+      {/* ===== MANAGER MESSAGE BANNER ===== */}
+      {managerMsg && tab !== "managermsg" && (
+        <div style={{
+          position: "fixed", bottom: undoToast ? 80 : 24, right: 20,
+          background: "linear-gradient(135deg, #1E3A5F, #2D2060)",
+          border: "1px solid #60A5FA44", borderRadius: 12,
+          padding: "10px 16px", maxWidth: 280,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.5)", zIndex: 490,
+          cursor: "pointer"
+        }} onClick={() => setTab("managermsg")}>
+          <div style={{ fontSize: 11, color: "#60A5FA", fontWeight: 700, marginBottom: 4 }}>📢 رسالة من الإدارة</div>
+          <div style={{ fontSize: 12, color: "#CBD5E1", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{managerMsg}</div>
         </div>
       )}
     </div>
