@@ -17,13 +17,30 @@ const MOTIVATIONAL_MSGS = [
   "💡 عقلك الرائع يُحوّل التحديات لإنجازات!",
   "🌈 كل مهمة تُكملها تقربك من قمة النجاح!",
   "🦁 شجاع ومُثابر — هذا ما يميزك!",
+  "🎉 يااااه! مهمة كمان اتحلت! إنت مطحنة إنجازات!",
+  "🥳 برافو عليك! فريقنا محظوظ بيك!",
+  "⚡ سرعة وإتقان مع بعض؟ إنت خلطة نادرة!",
+  "🍀 شغل نضيف كده يستاهل احتفال حقيقي!",
+  "🎈 ماشي بخطى ثابتة نحو القمة، كمّل كده!",
+  "👏 تصفيق حاد! ده بالظبط اللي بيميز المحترفين!",
+  "🌻 يوم تاني، إنجاز تاني، إنت مصدر إلهام فعلاً!",
+  "🥇 لو فيه ميدالية للانضباط كنت هتاخدها النهاردة!",
+  "🎊 وحدة كمان في رصيدك! مفيش وقف قدامك!",
+  "🧠 تفكير ذكي وتنفيذ أذكى — استمر كده!",
+  "🌟 إنت مش بس بتخلص شغل، إنت بتبني سمعة!",
+  "🔑 كل مهمة بتخلصها بتفتحلك باب جديد للنجاح!",
+  "🎁 هدية اليوم: إحساس الإنجاز! استمتع بيه!",
+  "🏅 أداء يستاهل التقدير، شكراً لمجهودك!",
 ];
+
+const CONFETTI_EMOJIS = ["🎉", "🎊", "✨", "⭐", "🥳", "🏆", "🎈", "💫", "🌟"];
 
 // ========== CONSTANTS ==========
 const APP_NAME = "المركز الاستشاري للمحاسبة";
 const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار النواقص", "قيد المراجعة", "تم الإنجاز"];
 const PRIORITIES = ["عالية", "متوسطة", "منخفضة"];
 const DEFAULT_TAGS = ["ضرائب عامة", "ضرائب قيمة مضافة", "سفر", "مجلس مدينة", "تأمينات", "ميزانيات", "إقرارات"];
+const DOC_TYPES = ["إقرار ضريبي", "عقد", "فاتورة", "سجل تجاري", "بطاقة ضريبية", "تأمينات", "أخرى"];
 const TAG_COLORS = ["#60A5FA", "#34D399", "#A78BFA", "#F59E0B", "#F472B6", "#2DD4BF", "#FB923C", "#EF4444", "#22C55E", "#818CF8"];
 
 const STATUS_COLOR = {
@@ -55,6 +72,11 @@ async function uploadToCloudinary(file) {
   return { url: data.secure_url, name: file.name, type: file.type, size: file.size };
 }
 
+function downloadUrl(url) {
+  if (!url) return url;
+  return url.includes("/upload/") ? url.replace("/upload/", "/upload/fl_attachment/") : url;
+}
+
 function daysDiff(due) {
   if (!due) return null;
   const now = new Date(); now.setHours(0,0,0,0);
@@ -66,19 +88,19 @@ function urgencyInfo(due) {
   if (diff === null) return null;
   if (diff < 0) return { label: "متأخرة", color: "#EF4444" };
   if (diff <= 3) return { label: `${diff} أيام`, color: "#F59E0B" };
-  return null;
+  return { label: `${diff} يوم`, color: "#34D399" };
 }
 
 const s = {
-  wrap: { minHeight: "100vh", background: "#0A0F1E", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "#F1F5F9", fontSize: 15 },
-  header: { background: "#0F172A", borderBottom: "1px solid #1E3A5F", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
+  wrap: { minHeight: "100vh", background: "var(--bg-page, #0A0F1E)", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "var(--text-primary, #F1F5F9)", fontSize: 15 },
+  header: { background: "var(--bg-panel, #0F172A)", borderBottom: "1px solid var(--border, #1E3A5F)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
   btnP: { background: "#2563EB", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
-  btnG: { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#CBD5E1", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
+  btnG: { background: "var(--btn-secondary-bg, rgba(255,255,255,0.08))", border: "1px solid var(--btn-secondary-border, rgba(255,255,255,0.15))", color: "var(--text-secondary, #FFFFFF)", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
   btnR: { background: "#3B1414", color: "#FCA5A5", border: "1px solid #EF444455", padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 13 },
-  card: { background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 12, padding: 16 },
-  input: { background: "#111827", border: "1px solid #1E3A5F", color: "#F1F5F9", padding: "10px 13px", borderRadius: 8, fontFamily: "inherit", fontSize: 14, width: "100%", outline: "none" },
+  card: { background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 12, padding: 16 },
+  input: { background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", color: "var(--text-primary, #F1F5F9)", padding: "10px 13px", borderRadius: 8, fontFamily: "inherit", fontSize: 14, width: "100%", outline: "none" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 },
-  modal: { background: "#111827", border: "1px solid #1E3A5F", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" },
+  modal: { background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" },
 };
 
 const TABS = [
@@ -91,6 +113,7 @@ const TABS = [
   { key: "calendar", label: "📅 التقويم" },
   { key: "reports", label: "📈 التقارير" },
   { key: "managermsg", label: "💬 رسالة المدير" },
+  { key: "chat", label: "💭 الشات" },
 ];
 
 // ========== LOGIN ==========
@@ -106,12 +129,12 @@ function LoginScreen({ onLogin, employees }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0F1E", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cairo',sans-serif", direction: "rtl" }}>
-      <div style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 16, padding: 32, width: 340 }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page, #0A0F1E)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cairo',sans-serif", direction: "rtl" }}>
+      <div style={{ background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 16, padding: 32, width: 340 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>📊</div>
-          <div style={{ fontWeight: 900, fontSize: 18, color: "#F1F5F9" }}>{APP_NAME}</div>
-          <div style={{ fontSize: 12, color: "#64748B" }}>سجل دخول للمتابعة</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text-primary, #F1F5F9)" }}>{APP_NAME}</div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)" }}>سجل دخول للمتابعة</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <input style={s.input} placeholder="اسم المستخدم" value={username} onChange={e => setUsername(e.target.value)} />
@@ -146,9 +169,14 @@ function App() {
   const [form, setForm] = useState({});
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedEmp, setSelectedEmp] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [newTag, setNewTag] = useState("");
+  const [docType, setDocType] = useState(DOC_TYPES[0]);
+  const [docExpiry, setDocExpiry] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -158,7 +186,24 @@ function App() {
   const [motivationMsg, setMotivationMsg] = useState(null);
   const [managerMsg, setManagerMsg] = useState("");
   const [managerMsgInput, setManagerMsgInput] = useState("");
+  const [previewFile, setPreviewFile] = useState(null);
+  const [lightboxImg, setLightboxImg] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newChatMsg, setNewChatMsg] = useState("");
+  const [focusMode, setFocusMode] = useState(false);
+  const [now, setNow] = useState(Date.now());
+  const [theme, setTheme] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-theme")) || "dark");
+  useEffect(() => { localStorage.setItem("maktabi-theme", theme); }, [theme]);
+  const [monthlyReportSeen, setMonthlyReportSeen] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-monthly-report-seen")) || "");
+  const [soundEnabled, setSoundEnabled] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-sound")) !== "off");
+  useEffect(() => { localStorage.setItem("maktabi-sound", soundEnabled ? "on" : "off"); }, [soundEnabled]);
+  const prevUnreadRef = useRef(0);
+  const [quickDueEditId, setQuickDueEditId] = useState(null);
+  const [quickDueValue, setQuickDueValue] = useState("");
   const fileInputRef = useRef(null);
+  const empFileInputRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const globalSearchRef = useRef(null);
 
   const isAdmin = currentUser?.role === "admin";
 
@@ -198,6 +243,7 @@ function App() {
     unsubs.push(onSnapshot(doc(db, "settings", "managerMsg"), snap => {
       if (snap.exists()) setManagerMsg(snap.data().text || "");
     }));
+    unsubs.push(onSnapshot(query(collection(db, "chat"), orderBy("time", "asc")), snap => setChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     return () => unsubs.forEach(u => u());
   }, []);
 
@@ -215,6 +261,72 @@ function App() {
     });
     return () => unsub();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser || tasks.length === 0) return;
+    const today = new Date().toISOString().split("T")[0];
+    tasks.forEach(async t => {
+      if (t.status === "تم الإنجاز" || !t.due || t.lastReminded === today) return;
+      const diff = daysDiff(t.due);
+      if (diff === null || diff > 2) return;
+      const msg = diff < 0 ? `⚠️ مهمة متأخرة: "${t.title}"` : diff === 0 ? `⏰ مهمة "${t.title}" موعدها النهاردة` : `⏰ باقي ${diff} يوم على "${t.title}"`;
+      if (t.empId) await sendNotification(t.empId, msg);
+      if (diff < 0) {
+        const admins = employees.filter(e => e.role === "admin" && e.id !== t.empId);
+        for (const a of admins) await sendNotification(a.id, msg);
+      }
+      await updateDoc(doc(db, "tasks", t.id), { lastReminded: today });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, tasks.length]);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        globalSearchRef.current?.focus();
+      }
+      if (e.key === "Escape") {
+        setSelectedTask(null); setSelectedClient(null); setSelectedEmp(null);
+        setModal(null); setProfileModal(false); setPreviewFile(null);
+        setLightboxImg(null); setShowGlobalSearch(false); setShowNotifications(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTask || !currentUser) return;
+    updateDoc(doc(db, "tasks", selectedTask.id), { viewingBy: currentUser.name, viewingAt: serverTimestamp() }).catch(() => {});
+    return () => { updateDoc(doc(db, "tasks", selectedTask.id), { viewingBy: null }).catch(() => {}); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTask?.id]);
+
+  useEffect(() => {
+    if (!selectedClient || !currentUser) return;
+    updateDoc(doc(db, "clients", selectedClient.id), { viewingBy: currentUser.name, viewingAt: serverTimestamp() }).catch(() => {});
+    return () => { updateDoc(doc(db, "clients", selectedClient.id), { viewingBy: null }).catch(() => {}); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClient?.id]);
+
+  useEffect(() => {
+    if (tab === "chat") chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, tab]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const update = () => updateDoc(doc(db, "employees", currentUser.id), { lastSeen: serverTimestamp() }).catch(() => {});
+    update();
+    const int = setInterval(update, 3 * 60 * 1000);
+    return () => clearInterval(int);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    const int = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(int);
+  }, []);
 
   async function logActivity(action, details) {
     await addDoc(collection(db, "activity"), { user: currentUser?.name || "مجهول", action, details, time: serverTimestamp() });
@@ -272,13 +384,14 @@ function App() {
   }
 
   async function moveTask(id, status, title, empId) {
-    await updateDoc(doc(db, "tasks", id), { status, updatedBy: currentUser?.name, updatedAt: serverTimestamp() });
+    const extra = status === "تم الإنجاز" ? { completedAt: new Date().toISOString().split("T")[0] } : {};
+    await updateDoc(doc(db, "tasks", id), { status, updatedBy: currentUser?.name, updatedAt: serverTimestamp(), ...extra });
     await logActivity("تغيير حالة", `${title} ← ${status}`);
     if (empId && empId !== currentUser?.id) await sendNotification(empId, `تم تغيير حالة مهمتك "${title}" إلى ${status}`);
     if (status === "تم الإنجاز") {
       const msg = MOTIVATIONAL_MSGS[Math.floor(Math.random() * MOTIVATIONAL_MSGS.length)];
       setMotivationMsg(msg);
-      setTimeout(() => setMotivationMsg(null), 4000);
+      setTimeout(() => setMotivationMsg(null), 4800);
     }
   }
 
@@ -390,7 +503,7 @@ function App() {
   }
 
   // ========== ATTACHMENTS ==========
-  async function uploadAttachment(file, entityType, entityId, entityName) {
+  async function uploadAttachment(file, entityType, entityId, entityName, docType, expiry) {
     setUploading(true);
     try {
       const uploaded = await uploadToCloudinary(file);
@@ -398,6 +511,7 @@ function App() {
         entityType, entityId, entityName,
         url: uploaded.url, name: uploaded.name,
         fileType: uploaded.type, size: uploaded.size,
+        docType: docType || "", expiry: expiry || "",
         uploadedBy: currentUser?.name, uploadedAt: serverTimestamp()
       });
       await logActivity("رفع مرفق", `${uploaded.name} على ${entityName}`);
@@ -421,6 +535,84 @@ function App() {
     setNewComment("");
   }
 
+  // ========== TEAM CHAT ==========
+  async function sendChatMessage() {
+    if (!newChatMsg.trim()) return;
+    await addDoc(collection(db, "chat"), {
+      text: newChatMsg.trim(), userId: currentUser.id, userName: currentUser.name,
+      userColor: currentUser.color || "#2563EB", time: serverTimestamp()
+    });
+    setNewChatMsg("");
+  }
+
+  // ========== PINNING ==========
+  async function toggleTaskPin(task) {
+    await updateDoc(doc(db, "tasks", task.id), { pinned: !task.pinned });
+  }
+  async function toggleClientPin(client) {
+    await updateDoc(doc(db, "clients", client.id), { pinned: !client.pinned });
+  }
+
+  // ========== TASK TIMER ==========
+  async function toggleTaskTimer(task) {
+    if (task.timerRunning) {
+      const startedAt = task.timerStartedAt?.toMillis ? task.timerStartedAt.toMillis() : Date.now();
+      const elapsed = Math.round((Date.now() - startedAt) / 1000);
+      await updateDoc(doc(db, "tasks", task.id), {
+        timerRunning: false, timeSpent: (task.timeSpent || 0) + elapsed, timerStartedAt: null
+      });
+    } else {
+      await updateDoc(doc(db, "tasks", task.id), { timerRunning: true, timerStartedAt: serverTimestamp() });
+    }
+  }
+
+  function formatLastSeen(emp) {
+    if (!emp?.lastSeen?.toMillis) return "لم يسجل دخول بعد";
+    const ms = emp.lastSeen.toMillis();
+    const diffMin = Math.round((now - ms) / 60000);
+    if (diffMin < 5) return "🟢 متصل الآن";
+    if (diffMin < 60) return `منذ ${diffMin} دقيقة`;
+    const diffH = Math.round(diffMin / 60);
+    if (diffH < 24) return `منذ ${diffH} ساعة`;
+    const diffD = Math.round(diffH / 24);
+    return `منذ ${diffD} يوم`;
+  }
+
+  function formatDuration(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+    if (h > 0) return `${h}س ${m}د`;
+    if (m > 0) return `${m}د ${s}ث`;
+    return `${s}ث`;
+  }
+
+  function liveTaskSeconds(task) {
+    let secs = task.timeSpent || 0;
+    if (task.timerRunning && task.timerStartedAt?.toMillis) {
+      secs += Math.round((now - task.timerStartedAt.toMillis()) / 1000);
+    }
+    return secs;
+  }
+
+  // ========== EMPLOYEE RATING ==========
+  function getEmployeeRating(empId) {
+    const empTasks = tasks.filter(t => t.empId === empId && t.status === "تم الإنجاز");
+    if (empTasks.length === 0) return { stars: 0, count: 0, onTimePct: 0 };
+    const onTimeCount = empTasks.filter(t => {
+      if (!t.due) return true;
+      if (!t.completedAt) return true; // legacy tasks completed before this feature existed
+      return t.completedAt <= t.due;
+    }).length;
+    const pct = Math.round((onTimeCount / empTasks.length) * 100);
+    let stars = 1;
+    if (pct >= 95 && empTasks.length >= 5) stars = 5;
+    else if (pct >= 85) stars = 4;
+    else if (pct >= 70) stars = 3;
+    else if (pct >= 50) stars = 2;
+    return { stars, count: empTasks.length, onTimePct: pct };
+  }
+
   // ========== TAGS ==========
   async function addNewTag() {
     if (!newTag.trim() || tags.includes(newTag.trim())) return;
@@ -430,14 +622,52 @@ function App() {
 
   // ========== HELPERS ==========
   const getEmp = id => employees.find(e => e.id === id);
+  function otherViewer(entity) {
+    if (!entity?.viewingBy || entity.viewingBy === currentUser?.name) return null;
+    const t = entity.viewingAt?.toMillis ? entity.viewingAt.toMillis() : 0;
+    if (!t || now - t > 60000) return null;
+    return entity.viewingBy;
+  }
   const getClient = id => clients.find(c => c.id === id);
   const alerts = tasks.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) <= 3);
   const unreadNotifs = notifications.filter(n => !n.read).length;
 
+  function playNotifSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+    } catch (e) { /* audio not supported/blocked, ignore */ }
+  }
+
+  useEffect(() => {
+    if (soundEnabled && unreadNotifs > prevUnreadRef.current) playNotifSound();
+    prevUnreadRef.current = unreadNotifs;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadNotifs, soundEnabled]);
+
+  const globalResults = useMemo(() => {
+    const q = globalSearch.trim();
+    if (!q) return { emps: [], clis: [], tsks: [] };
+    return {
+      emps: employees.filter(e => e.name?.includes(q) || e.username?.includes(q)).slice(0, 5),
+      clis: clients.filter(c => c.name?.includes(q) || c.phone?.includes(q)).slice(0, 5),
+      tsks: tasks.filter(t => t.title?.includes(q)).slice(0, 5),
+    };
+  }, [globalSearch, employees, clients, tasks]);
+
   const sortedClients = useMemo(() => {
     return [...clients]
       .filter(c => c.name?.includes(clientSearch))
-      .sort((a, b) => a.name?.localeCompare(b.name, "ar"));
+      .sort((a, b) => a.name?.localeCompare(b.name, "ar"))
+      .sort((a, b) => (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1));
   }, [clients, clientSearch]);
 
   const filtered = useMemo(() => {
@@ -451,6 +681,7 @@ function App() {
       const order = { "عالية": 0, "متوسطة": 1, "منخفضة": 2 };
       t = [...t].sort((a, b) => (order[a.priority] || 0) - (order[b.priority] || 0));
     }
+    t = [...t].sort((a, b) => (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1));
     return t;
   }, [tasks, filterEmp, filterTag, search, sortBy, isAdmin, currentUser]);
 
@@ -491,13 +722,49 @@ function App() {
 
   function printReport() { window.print(); }
 
+  function printClientStatement(client) {
+    const clientPayments = payments.filter(p => p.clientId === client.id);
+    const clientTasks = tasks.filter(t => t.clientId === client.id);
+    const total = clientPayments.filter(p => p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const win = window.open("", "_blank");
+    win.document.write(`
+      <html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>كشف حساب ${client.name}</title>
+      <style>
+        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 30px; color: #111; }
+        h1 { font-size: 20px; border-bottom: 2px solid #2563EB; padding-bottom: 10px; }
+        h2 { font-size: 15px; margin-top: 24px; color: #2563EB; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: right; font-size: 13px; }
+        th { background: #f1f5f9; }
+        .total { font-weight: bold; font-size: 15px; margin-top: 10px; }
+        .meta { font-size: 12px; color: #555; margin-bottom: 4px; }
+      </style></head><body>
+        <h1>📊 ${APP_NAME} — كشف حساب: ${client.name}</h1>
+        <div class="meta">📞 ${client.phone || "-"} &nbsp; 📧 ${client.email || "-"}</div>
+        <div class="meta">تاريخ الطباعة: ${new Date().toLocaleDateString("ar-EG")}</div>
+        <h2>سجل الأعمال</h2>
+        <table><thead><tr><th>المهمة</th><th>الموظف</th><th>الموعد</th><th>الحالة</th></tr></thead><tbody>
+          ${clientTasks.map(t => `<tr><td>${t.title}</td><td>${getEmp(t.empId)?.name || "-"}</td><td>${t.due || "-"}</td><td>${t.status}</td></tr>`).join("") || `<tr><td colspan="4">لا توجد مهام</td></tr>`}
+        </tbody></table>
+        <h2>سجل المدفوعات</h2>
+        <table><thead><tr><th>المبلغ</th><th>النوع</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>
+          ${clientPayments.map(p => `<tr><td>${parseFloat(p.amount).toLocaleString()} ج</td><td>${p.type}</td><td>${p.date}</td><td>${p.status}</td></tr>`).join("") || `<tr><td colspan="4">لا توجد مدفوعات</td></tr>`}
+        </tbody></table>
+        <div class="total">إجمالي المدفوع: ${total.toLocaleString()} ج.م</div>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  }
+
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#0A0F1E", display: "flex", alignItems: "center", justifyContent: "center", color: "#60A5FA", fontFamily: "'Cairo',sans-serif", fontSize: 18 }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page, #0A0F1E)", display: "flex", alignItems: "center", justifyContent: "center", color: "#60A5FA", fontFamily: "'Cairo',sans-serif", fontSize: 18 }}>
       جاري التحميل...
     </div>
   );
 
-  if (!currentUser) return <LoginScreen onLogin={emp => setCurrentUser(emp)} employees={employees} />;
+  if (!currentUser) return <LoginScreen onLogin={emp => { setCurrentUser(emp); updateDoc(doc(db, "employees", emp.id), { lastSeen: serverTimestamp() }).catch(() => {}); }} employees={employees} />;
 
   const { days, year, month } = getCalendarDays();
   const totalPayments = payments.reduce((sum, p) => sum + (p.status === "مدفوع" ? parseFloat(p.amount) || 0 : 0), 0);
@@ -506,10 +773,26 @@ function App() {
     <div style={s.wrap}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        :root {
+          --bg-page: ${theme === "light" ? "#F1F5F9" : "#0A0F1E"};
+          --bg-panel: ${theme === "light" ? "#FFFFFF" : "#0F172A"};
+          --bg-input: ${theme === "light" ? "#F8FAFC" : "#111827"};
+          --border: ${theme === "light" ? "#E2E8F0" : "#1E3A5F"};
+          --border-alt: ${theme === "light" ? "#E2E8F0" : "#1E293B"};
+          --text-primary: ${theme === "light" ? "#0F172A" : "#F1F5F9"};
+          --text-secondary: ${theme === "light" ? "#64748B" : "#FFFFFF"};
+          --btn-secondary-bg: ${theme === "light" ? "rgba(15,23,42,0.05)" : "rgba(255,255,255,0.08)"};
+          --btn-secondary-border: ${theme === "light" ? "rgba(15,23,42,0.15)" : "rgba(255,255,255,0.15)"};
+          --tab-inactive-bg: ${theme === "light" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.05)"};
+          --notif-unread-bg: ${theme === "light" ? "rgba(37,99,235,0.08)" : "rgba(30,58,95,0.4)"};
+        }
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0A0F1E; } ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 3px; }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg-page, #0A0F1E); } ::-webkit-scrollbar-thumb { background: var(--border, #1E3A5F); border-radius: 3px; }
         .task-card { transition: all 0.2s; } .task-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
-        select option { background: #111827; }
+        select option { background: var(--bg-input, #111827); color: var(--text-primary, #F1F5F9); }
+        @keyframes confettiFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; } }
+        @keyframes celebPopIn { 0% { transform: translate(-50%, -50%) scale(0.4) rotate(-6deg); opacity: 0; } 60% { transform: translate(-50%, -50%) scale(1.08) rotate(2deg); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes celebBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.08); } }
         @media print { .no-print { display: none !important; } }
       `}</style>
 
@@ -518,29 +801,70 @@ function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 38, height: 38, background: "#2563EB", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📊</div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 15, color: "#F1F5F9" }}>{APP_NAME}</div>
-            <div style={{ fontSize: 11, color: "#64748B" }}>أهلاً {currentUser.name} {isAdmin ? "👑" : ""}</div>
+            <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-primary, #F1F5F9)" }}>{APP_NAME}</div>
+            <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>أهلاً {currentUser.name} {isAdmin ? "👑" : ""}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {alerts.length > 0 && <div style={{ background: "#2D1B0E", border: "1px solid #EF4444", color: "#EF4444", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>⚠️ {alerts.length}</div>}
 
           <div style={{ position: "relative" }}>
+            <input
+              ref={globalSearchRef}
+              style={{ ...s.input, width: 160, padding: "8px 12px", fontSize: 13 }}
+              placeholder="🔍 بحث شامل (Ctrl+K)"
+              value={globalSearch}
+              onFocus={() => setShowGlobalSearch(true)}
+              onBlur={() => setTimeout(() => setShowGlobalSearch(false), 150)}
+              onChange={e => { setGlobalSearch(e.target.value); setShowGlobalSearch(true); }}
+            />
+            {showGlobalSearch && globalSearch.trim() && (
+              <div style={{ position: "absolute", top: 40, left: 0, background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 10, width: 280, maxHeight: 340, overflowY: "auto", zIndex: 300, padding: 8 }}>
+                {globalResults.emps.length === 0 && globalResults.clis.length === 0 && globalResults.tsks.length === 0 && (
+                  <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12, textAlign: "center", padding: 12 }}>لا توجد نتائج</div>
+                )}
+                {globalResults.emps.length > 0 && <>
+                  <div style={{ fontSize: 10, color: "#60A5FA", fontWeight: 700, padding: "4px 6px" }}>👥 الموظفون</div>
+                  {globalResults.emps.map(e => (
+                    <div key={e.id} onClick={() => { setTab("employees"); setShowGlobalSearch(false); setGlobalSearch(""); }} style={{ padding: "6px 8px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>{e.name} <span style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 10 }}>@{e.username}</span></div>
+                  ))}
+                </>}
+                {globalResults.clis.length > 0 && <>
+                  <div style={{ fontSize: 10, color: "#34D399", fontWeight: 700, padding: "4px 6px" }}>🏢 العملاء</div>
+                  {globalResults.clis.map(c => (
+                    <div key={c.id} onClick={() => { setSelectedClient(c); setShowGlobalSearch(false); setGlobalSearch(""); }} style={{ padding: "6px 8px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>{c.name}</div>
+                  ))}
+                </>}
+                {globalResults.tsks.length > 0 && <>
+                  <div style={{ fontSize: 10, color: "#F59E0B", fontWeight: 700, padding: "4px 6px" }}>📋 المهام</div>
+                  {globalResults.tsks.map(t => (
+                    <div key={t.id} onClick={() => { setSelectedTask(t); setShowGlobalSearch(false); setGlobalSearch(""); }} style={{ padding: "6px 8px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>{t.title}</div>
+                  ))}
+                </>}
+              </div>
+            )}
+          </div>
+
+          <div style={{ position: "relative" }}>
             <button style={{ ...s.btnG, padding: "8px 12px", position: "relative" }} onClick={() => setShowNotifications(!showNotifications)}>
               🔔 {unreadNotifs > 0 && <span style={{ position: "absolute", top: -4, right: -4, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNotifs}</span>}
             </button>
             {showNotifications && (
-              <div style={{ position: "absolute", top: 44, left: 0, background: "#111827", border: "1px solid #1E3A5F", borderRadius: 10, width: 280, maxHeight: 300, overflowY: "auto", zIndex: 300, padding: 8 }}>
-                {notifications.length === 0 && <div style={{ color: "#64748B", fontSize: 12, textAlign: "center", padding: 12 }}>لا توجد إشعارات</div>}
+              <div style={{ position: "absolute", top: 44, left: 0, background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 10, width: 280, maxHeight: 300, overflowY: "auto", zIndex: 300, padding: 8 }}>
+                {notifications.length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12, textAlign: "center", padding: 12 }}>لا توجد إشعارات</div>}
                 {notifications.slice(0, 10).map(n => (
-                  <div key={n.id} onClick={() => markNotifRead(n.id)} style={{ padding: "8px 10px", borderRadius: 7, marginBottom: 4, background: n.read ? "transparent" : "#1E3A5F22", cursor: "pointer", borderRight: n.read ? "none" : "3px solid #2563EB" }}>
-                    <div style={{ fontSize: 12, color: n.read ? "#64748B" : "#CBD5E1" }}>{n.message}</div>
-                    <div style={{ fontSize: 10, color: "#475569" }}>{n.time?.toDate ? n.time.toDate().toLocaleString("ar-EG") : ""}</div>
+                  <div key={n.id} onClick={() => markNotifRead(n.id)} style={{ padding: "8px 10px", borderRadius: 7, marginBottom: 4, background: n.read ? "transparent" : "var(--notif-unread-bg, rgba(30,58,95,0.4))", cursor: "pointer", borderRight: n.read ? "none" : "3px solid #2563EB" }}>
+                    <div style={{ fontSize: 12, color: n.read ? "var(--text-secondary, #FFFFFF)" : "var(--text-primary, #F1F5F9)", fontWeight: n.read ? 400 : 700 }}>{n.message}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{n.time?.toDate ? n.time.toDate().toLocaleString("ar-EG") : ""}</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          <button style={{ ...s.btnG, padding: "8px 12px" }} onClick={() => setSoundEnabled(v => !v)} title="تنبيه صوتي">{soundEnabled ? "🔔" : "🔕"}</button>
+
+          <button style={{ ...s.btnG, padding: "8px 12px" }} onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="تبديل الوضع">{theme === "dark" ? "☀️" : "🌙"}</button>
 
           <button style={{ ...s.btnG, padding: "8px 12px" }} onClick={() => window.location.reload()} title="تحديث">🔄</button>
 
@@ -560,9 +884,9 @@ function App() {
       <div style={{ padding: "12px 20px 0", display: "flex", gap: 6, flexWrap: "wrap" }} className="no-print">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
-            padding: "7px 14px", borderRadius: 8, border: tab === t.key ? "none" : "1px solid #1E3A5F",
-            background: tab === t.key ? "#2563EB" : "rgba(255,255,255,0.05)",
-            color: tab === t.key ? "#fff" : "#94A3B8", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12
+            padding: "7px 14px", borderRadius: 8, border: tab === t.key ? "none" : "1px solid var(--border, #1E3A5F)",
+            background: tab === t.key ? "#2563EB" : "var(--tab-inactive-bg, rgba(255,255,255,0.05))",
+            color: "var(--text-secondary, #FFFFFF)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12
           }}>{t.label}</button>
         ))}
       </div>
@@ -572,6 +896,17 @@ function App() {
         {/* ===== DASHBOARD ===== */}
         {tab === "dashboard" && (
           <div>
+            {isAdmin && new Date().getDate() <= 3 && monthlyReportSeen !== `${new Date().getFullYear()}-${new Date().getMonth()}` && (
+              <div style={{ background: "linear-gradient(135deg, #1E3A5F, #2D2060)", border: "1px solid #60A5FA44", borderRadius: 12, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 22 }}>📊</span>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary, #F1F5F9)" }}>حان وقت تقرير الشهر الماضي</div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>حمّل كشف المدفوعات وابعته لمين محتاجه</div>
+                </div>
+                <button onClick={exportCSV} style={{ ...s.btnP, fontSize: 12, padding: "7px 14px" }}>⬇ تحميل التقرير</button>
+                <button onClick={() => { const k = `${new Date().getFullYear()}-${new Date().getMonth()}`; localStorage.setItem("maktabi-monthly-report-seen", k); setMonthlyReportSeen(k); }} style={{ ...s.btnG, fontSize: 12, padding: "7px 14px" }}>تجاهل</button>
+              </div>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "إجمالي المهام", val: tasks.length, color: "#60A5FA" },
@@ -581,15 +916,15 @@ function App() {
                 { label: "الموظفون", val: employees.length, color: "#F472B6" },
                 { label: "إجمالي المدفوعات", val: `${totalPayments.toLocaleString()} ج`, color: "#34D399" },
               ].map((st, i) => (
-                <div key={i} style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                <div key={i} style={{ background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 10, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: i === 5 ? 16 : 26, fontWeight: 900, color: st.color }}>{st.val}</div>
-                  <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>{st.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginTop: 4 }}>{st.label}</div>
                 </div>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>توزيع المهام</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>توزيع المهام</div>
                 {STATUSES.map(st => {
                   const count = tasks.filter(t => t.status === st).length;
                   const pct = tasks.length ? Math.round(count / tasks.length * 100) : 0;
@@ -597,9 +932,9 @@ function App() {
                     <div key={st} style={{ marginBottom: 10 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
                         <span style={{ color: STATUS_COLOR[st] }}>{st}</span>
-                        <span style={{ color: "#64748B" }}>{count}</span>
+                        <span style={{ color: "var(--text-secondary, #FFFFFF)" }}>{count}</span>
                       </div>
-                      <div style={{ background: "#1E293B", borderRadius: 4, height: 5 }}>
+                      <div style={{ background: "var(--border-alt, #1E293B)", borderRadius: 4, height: 5 }}>
                         <div style={{ background: STATUS_COLOR[st], height: 5, borderRadius: 4, width: `${pct}%` }}></div>
                       </div>
                     </div>
@@ -607,7 +942,7 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>إنجاز الموظفين</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>إنجاز الموظفين</div>
                 {employees.map(e => {
                   const total = tasks.filter(t => t.empId === e.id).length;
                   const done = tasks.filter(t => t.empId === e.id && t.status === "تم الإنجاز").length;
@@ -615,10 +950,10 @@ function App() {
                   return (
                     <div key={e.id} style={{ marginBottom: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                        <span style={{ color: "#CBD5E1" }}>{e.name}</span>
+                        <span style={{ color: "var(--text-secondary, #FFFFFF)" }}>{e.name}</span>
                         <span style={{ color: e.color, fontWeight: 700 }}>{done}/{total}</span>
                       </div>
-                      <div style={{ background: "#1E293B", borderRadius: 4, height: 5 }}>
+                      <div style={{ background: "var(--border-alt, #1E293B)", borderRadius: 4, height: 5 }}>
                         <div style={{ background: e.color, height: 5, borderRadius: 4, width: `${pct}%` }}></div>
                       </div>
                     </div>
@@ -626,8 +961,8 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>⚠️ تنبيهات المواعيد</div>
-                {alerts.length === 0 && <div style={{ color: "#334155", fontSize: 12, textAlign: "center", padding: "20px 0" }}>لا توجد تنبيهات</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>⚠️ تنبيهات المواعيد</div>
+                {alerts.length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12, textAlign: "center", padding: "20px 0" }}>لا توجد تنبيهات</div>}
                 {alerts.map(t => {
                   const info = urgencyInfo(t.due);
                   return (
@@ -635,7 +970,7 @@ function App() {
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#FCA5A5", marginBottom: 4 }}>{t.title}</div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <span style={{ fontSize: 11, color: info?.color, fontWeight: 700 }}>{info?.label}</span>
-                        <span style={{ fontSize: 11, color: "#64748B" }}>📅 {t.due}</span>
+                        <span style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>📅 {t.due}</span>
                       </div>
                     </div>
                   );
@@ -662,6 +997,11 @@ function App() {
                 <option value="due">ترتيب: التاريخ</option>
                 <option value="priority">ترتيب: الأولوية</option>
               </select>
+              <button
+                onClick={() => { setFocusMode(f => !f); setFilterEmp(!focusMode ? currentUser.id : "all"); }}
+                style={{ ...(focusMode ? s.btnP : s.btnG), fontSize: 12, padding: "8px 14px" }}
+                title="اعرض مهامك أنت بس"
+              >🎯 وضع التركيز {focusMode ? "✓" : ""}</button>
             </div>
             <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
               {STATUSES.map(status => (
@@ -681,9 +1021,11 @@ function App() {
                       const taskComments = comments.filter(c => c.taskId === task.id);
                       const canEdit = isAdmin || task.empId === currentUser?.id;
                       return (
-                        <div key={task.id} className="task-card" style={{ background: "#111827", border: `1px solid ${urg ? urg.color + "55" : "#1E293B"}`, borderRadius: 10, padding: 12, cursor: "pointer" }} onClick={() => setSelectedTask(task)}>
+                        <div key={task.id} className="task-card" style={{ background: "var(--bg-input, #111827)", border: `1px solid ${task.pinned ? "#F59E0B" : urg ? urg.color + "55" : "var(--border-alt, #1E293B)"}`, borderRadius: 10, padding: 12, cursor: "pointer", position: "relative" }} onClick={() => setSelectedTask(task)}>
+                          {task.pinned && <span style={{ position: "absolute", top: -7, right: 10, fontSize: 12 }}>📌</span>}
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
                             <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.4, flex: 1 }}>{task.title}</span>
+                            <button onClick={e => { e.stopPropagation(); toggleTaskPin(task); }} title="تثبيت" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, opacity: task.pinned ? 1 : 0.35, padding: 0 }}>📌</button>
                             <span style={{ background: PRI_COLOR[task.priority] + "22", color: PRI_COLOR[task.priority], borderRadius: 5, padding: "1px 6px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{task.priority}</span>
                           </div>
                           {emp && (
@@ -691,8 +1033,8 @@ function App() {
                               <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", background: emp.color + "33", border: `1.5px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {emp.photo ? <img src={emp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: emp.color, fontWeight: 700 }}>{emp.name[0]}</span>}
                               </div>
-                              <span style={{ fontSize: 10, color: "#94A3B8" }}>{emp.name}</span>
-                              {client && <span style={{ fontSize: 10, color: "#64748B" }}>• {client.name}</span>}
+                              <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{emp.name}</span>
+                              {client && <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>• {client.name}</span>}
                             </div>
                           )}
                           {task.tags?.length > 0 && (
@@ -701,9 +1043,22 @@ function App() {
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-                            <div style={{ display: "flex", gap: 6 }}>
-                              {task.due && <span style={{ fontSize: 9, color: urg ? urg.color : "#475569" }}>📅 {task.due}</span>}
-                              {taskComments.length > 0 && <span style={{ fontSize: 9, color: "#64748B" }}>💬 {taskComments.length}</span>}
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              {quickDueEditId === task.id ? (
+                                <input
+                                  type="date" autoFocus value={quickDueValue}
+                                  onClick={e => e.stopPropagation()}
+                                  onChange={e => setQuickDueValue(e.target.value)}
+                                  onBlur={async () => { await updateDoc(doc(db, "tasks", task.id), { due: quickDueValue }); setQuickDueEditId(null); }}
+                                  onKeyDown={e => e.key === "Enter" && e.target.blur()}
+                                  style={{ fontSize: 9, padding: "1px 3px", borderRadius: 4, border: "1px solid var(--border, #1E3A5F)", background: "var(--bg-panel, #0F172A)", color: "var(--text-primary, #F1F5F9)" }}
+                                />
+                              ) : task.due ? (
+                                <span onDoubleClick={e => { e.stopPropagation(); setQuickDueEditId(task.id); setQuickDueValue(task.due); }} title="دبل كليك للتعديل السريع" style={{ fontSize: 9, color: urg ? urg.color : "var(--text-secondary, #FFFFFF)", cursor: "pointer" }}>📅 {task.due}</span>
+                              ) : (
+                                <span onClick={e => { e.stopPropagation(); setQuickDueEditId(task.id); setQuickDueValue(""); }} style={{ fontSize: 9, color: "var(--text-secondary, #FFFFFF)", cursor: "pointer" }}>+ تاريخ</span>
+                              )}
+                              {taskComments.length > 0 && <span style={{ fontSize: 9, color: "var(--text-secondary, #FFFFFF)" }}>💬 {taskComments.length}</span>}
                             </div>
                           </div>
                           {canEdit && (
@@ -713,7 +1068,7 @@ function App() {
                                   style={{ background: STATUS_BG[s], color: STATUS_COLOR[s], border: "none", borderRadius: 4, padding: "2px 5px", fontSize: 8, cursor: "pointer", fontFamily: "inherit" }}>{s}</button>
                               ))}
                               <button onClick={e => { e.stopPropagation(); setForm({ ...task }); setModal("task"); }}
-                                style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>✏️</button>
+                                style={{ background: "var(--border, #1E3A5F)", color: "#60A5FA", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>✏️</button>
                               {isAdmin && <>
                                 <button onClick={e => { e.stopPropagation(); setForm({ taskId: task.id, title: task.title, currentEmpId: task.empId }); setModal("transfer"); }}
                                   style={{ background: "#1E4D3A", color: "#34D399", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>نقل</button>
@@ -725,7 +1080,7 @@ function App() {
                         </div>
                       );
                     })}
-                    {byStatus(status).length === 0 && <div style={{ color: "#334155", fontSize: 11, textAlign: "center", padding: "12px 0" }}>لا توجد مهام</div>}
+                    {byStatus(status).length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 11, textAlign: "center", padding: "12px 0" }}>لا توجد مهام</div>}
                   </div>
                 </div>
               ))}
@@ -740,28 +1095,31 @@ function App() {
               const total = tasks.filter(t => t.empId === emp.id).length;
               const done = tasks.filter(t => t.empId === emp.id && t.status === "تم الإنجاز").length;
               const pct = total ? Math.round(done / total * 100) : 0;
+              const rating = getEmployeeRating(emp.id);
               return (
-                <div key={emp.id} style={{ ...s.card, border: `1px solid ${emp.color}33` }}>
+                <div key={emp.id} style={{ ...s.card, border: `1px solid ${emp.color}33`, cursor: "pointer" }} onClick={() => setSelectedEmp(emp)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: emp.color + "22", border: `2px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div onClick={e => { e.stopPropagation(); emp.photo && setLightboxImg(emp.photo); }} style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: emp.color + "22", border: `2px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: emp.photo ? "zoom-in" : "default" }}>
                       {emp.photo ? <img src={emp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 20, color: emp.color, fontWeight: 900 }}>{emp.name[0]}</span>}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{emp.name} {emp.role === "admin" ? "👑" : ""}</div>
-                      <div style={{ fontSize: 11, color: "#64748B" }}>@{emp.username}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>@{emp.username}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)", marginTop: 1 }}>{formatLastSeen(emp)}</div>
+                      {rating.count > 0 && <div style={{ fontSize: 12, color: "#F59E0B", marginTop: 2 }}>{"⭐".repeat(rating.stars)}{"☆".repeat(5 - rating.stars)} <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>({rating.onTimePct}% في الموعد)</span></div>}
                     </div>
                     {isAdmin && (
-                      <div style={{ display: "flex", gap: 5 }}>
-                        <button onClick={() => { setForm({ ...emp }); setModal("emp"); }} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                      <div style={{ display: "flex", gap: 5 }} onClick={e => e.stopPropagation()}>
+                        <button onClick={() => { setForm({ ...emp }); setModal("emp"); }} style={{ background: "var(--border, #1E3A5F)", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
                         <button onClick={() => deleteEmp(emp.id, emp.name)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>🗑</button>
                       </div>
                     )}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: "#64748B" }}>الإنجاز</span>
+                    <span style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>الإنجاز</span>
                     <span style={{ fontSize: 11, color: emp.color, fontWeight: 700 }}>{done}/{total} ({pct}%)</span>
                   </div>
-                  <div style={{ background: "#1E293B", borderRadius: 4, height: 5, marginBottom: 10 }}>
+                  <div style={{ background: "var(--border-alt, #1E293B)", borderRadius: 4, height: 5, marginBottom: 10 }}>
                     <div style={{ background: emp.color, height: 5, borderRadius: 4, width: `${pct}%` }}></div>
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
@@ -791,17 +1149,19 @@ function App() {
                 const clientPayments = payments.filter(p => p.clientId === client.id);
                 const totalPaid = clientPayments.filter(p => p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
                 return (
-                  <div key={client.id} style={s.card}>
+                  <div key={client.id} style={{ ...s.card, border: client.pinned ? "1px solid #F59E0B" : s.card.border, position: "relative" }}>
+                    {client.pinned && <span style={{ position: "absolute", top: -7, right: 14, fontSize: 12 }}>📌</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏢</div>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--border, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏢</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{client.name}</div>
-                        <div style={{ fontSize: 11, color: "#64748B" }}>{client.phone}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>{client.phone}</div>
                       </div>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button onClick={() => setSelectedClient(client)} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>📁</button>
+                        <button onClick={() => toggleClientPin(client)} title="تثبيت" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, opacity: client.pinned ? 1 : 0.35 }}>📌</button>
+                        <button onClick={() => setSelectedClient(client)} style={{ background: "var(--border, #1E3A5F)", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>📁</button>
                         {isAdmin && <>
-                          <button onClick={() => { setForm({ ...client }); setModal("client"); }} style={{ background: "#1E3A5F", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                          <button onClick={() => { setForm({ ...client }); setModal("client"); }} style={{ background: "var(--border, #1E3A5F)", color: "#60A5FA", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
                           <button onClick={() => deleteClient(client.id, client.name)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>🗑</button>
                         </>}
                       </div>
@@ -823,7 +1183,7 @@ function App() {
         {tab === "payments" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8" }}>💰 كشف المدفوعات</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)" }}>💰 كشف المدفوعات</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={s.btnG} onClick={exportCSV}>📥 Excel</button>
                 <button style={s.btnG} onClick={printReport}>🖨️ طباعة</button>
@@ -836,18 +1196,18 @@ function App() {
                 { label: "غير مدفوع", val: payments.filter(p => p.status === "لم يدفع").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0), color: "#EF4444" },
                 { label: "عدد العمليات", val: payments.length, color: "#60A5FA" },
               ].map((st, i) => (
-                <div key={i} style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                <div key={i} style={{ background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 10, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: 20, fontWeight: 900, color: st.color }}>{typeof st.val === "number" && i < 3 ? `${st.val.toLocaleString()} ج` : st.val}</div>
-                  <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>{st.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginTop: 4 }}>{st.label}</div>
                 </div>
               ))}
             </div>
             <div style={s.card}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #1E293B" }}>
+                  <tr style={{ borderBottom: "1px solid var(--border-alt, #1E293B)" }}>
                     {["العميل", "المبلغ", "النوع", "الحالة", "التاريخ", "بواسطة", ""].map((h, i) => (
-                      <th key={i} style={{ padding: "8px 10px", color: "#64748B", fontWeight: 600, textAlign: "right" }}>{h}</th>
+                      <th key={i} style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)", fontWeight: 600, textAlign: "right" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -855,15 +1215,15 @@ function App() {
                   {payments.sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1).map(p => {
                     const client = getClient(p.clientId);
                     return (
-                      <tr key={p.id} style={{ borderBottom: "1px solid #0F172A" }}>
-                        <td style={{ padding: "8px 10px", color: "#CBD5E1" }}>{client?.name || "-"}</td>
+                      <tr key={p.id} style={{ borderBottom: "1px solid var(--bg-panel, #0F172A)" }}>
+                        <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{client?.name || "-"}</td>
                         <td style={{ padding: "8px 10px", color: "#34D399", fontWeight: 700 }}>{parseFloat(p.amount).toLocaleString()} ج</td>
-                        <td style={{ padding: "8px 10px", color: "#94A3B8" }}>{p.type}</td>
+                        <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{p.type}</td>
                         <td style={{ padding: "8px 10px" }}>
                           <span style={{ background: p.status === "مدفوع" ? "#1E4D3A" : p.status === "جزئي" ? "#3B2A0E" : "#2D1B1B", color: p.status === "مدفوع" ? "#34D399" : p.status === "جزئي" ? "#F59E0B" : "#EF4444", borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{p.status}</span>
                         </td>
-                        <td style={{ padding: "8px 10px", color: "#64748B" }}>{p.date}</td>
-                        <td style={{ padding: "8px 10px", color: "#64748B" }}>{p.createdBy}</td>
+                        <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{p.date}</td>
+                        <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{p.createdBy}</td>
                         <td style={{ padding: "8px 10px" }}>
                           {isAdmin && <button onClick={() => deletePayment(p.id)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 10, cursor: "pointer" }}>🗑</button>}
                         </td>
@@ -872,7 +1232,7 @@ function App() {
                   })}
                 </tbody>
               </table>
-              {payments.length === 0 && <div style={{ color: "#334155", textAlign: "center", padding: 20, fontSize: 13 }}>لا توجد مدفوعات بعد</div>}
+              {payments.length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", textAlign: "center", padding: 20, fontSize: 13 }}>لا توجد مدفوعات بعد</div>}
             </div>
           </div>
         )}
@@ -880,17 +1240,17 @@ function App() {
         {/* ===== ACTIVITY ===== */}
         {tab === "activity" && (
           <div style={s.card}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8", marginBottom: 16 }}>📜 سجل النشاط</div>
-            {activityLog.length === 0 && <div style={{ color: "#334155", textAlign: "center", padding: 20 }}>لا يوجد نشاط بعد</div>}
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 16 }}>📜 سجل النشاط</div>
+            {activityLog.length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", textAlign: "center", padding: 20 }}>لا يوجد نشاط بعد</div>}
             {activityLog.map(log => (
-              <div key={log.id} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid #1E293B" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
+              <div key={log.id} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--border-alt, #1E293B)" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--border, #1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
                 <div>
-                  <div style={{ fontSize: 13, color: "#CBD5E1" }}>
+                  <div style={{ fontSize: 13, color: "var(--text-secondary, #FFFFFF)" }}>
                     <span style={{ color: "#60A5FA", fontWeight: 700 }}>{log.user}</span> — {log.action}
-                    {log.details && <span style={{ color: "#94A3B8" }}> "{log.details}"</span>}
+                    {log.details && <span style={{ color: "var(--text-secondary, #FFFFFF)" }}> "{log.details}"</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{log.time?.toDate ? log.time.toDate().toLocaleString("ar-EG") : "الآن"}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginTop: 2 }}>{log.time?.toDate ? log.time.toDate().toLocaleString("ar-EG") : "الآن"}</div>
                 </div>
               </div>
             ))}
@@ -902,11 +1262,11 @@ function App() {
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <button onClick={() => setCalendarDate(new Date(year, month - 1))} style={{ ...s.btnG, padding: "6px 12px" }}>◀</button>
-              <div style={{ fontWeight: 700, fontSize: 16, color: "#F1F5F9" }}>{MONTHS_AR[month]} {year}</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary, #F1F5F9)" }}>{MONTHS_AR[month]} {year}</div>
               <button onClick={() => setCalendarDate(new Date(year, month + 1))} style={{ ...s.btnG, padding: "6px 12px" }}>▶</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 8 }}>
-              {DAYS_AR.map(d => <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#64748B", padding: "4px 0" }}>{d}</div>)}
+              {DAYS_AR.map(d => <div key={d} style={{ textAlign: "center", fontSize: 11, color: "var(--text-secondary, #FFFFFF)", padding: "4px 0" }}>{d}</div>)}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
               {days.map((day, i) => {
@@ -915,12 +1275,12 @@ function App() {
                 const today = new Date();
                 const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                 return (
-                  <div key={i} style={{ background: isToday ? "#1E3A5F" : "#111827", border: `1px solid ${isToday ? "#60A5FA" : "#1E293B"}`, borderRadius: 8, padding: "6px 4px", minHeight: 60 }}>
-                    <div style={{ fontSize: 12, color: isToday ? "#60A5FA" : "#94A3B8", fontWeight: isToday ? 700 : 400, marginBottom: 4, textAlign: "center" }}>{day}</div>
+                  <div key={i} style={{ background: isToday ? "var(--border, #1E3A5F)" : "var(--bg-input, #111827)", border: `1px solid ${isToday ? "#60A5FA" : "var(--border-alt, #1E293B)"}`, borderRadius: 8, padding: "6px 4px", minHeight: 60 }}>
+                    <div style={{ fontSize: 12, color: isToday ? "#60A5FA" : "var(--text-secondary, #FFFFFF)", fontWeight: isToday ? 700 : 400, marginBottom: 4, textAlign: "center" }}>{day}</div>
                     {dayTasks.slice(0, 2).map(t => (
                       <div key={t.id} style={{ background: STATUS_COLOR[t.status] + "22", color: STATUS_COLOR[t.status], borderRadius: 3, padding: "1px 4px", fontSize: 9, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</div>
                     ))}
-                    {dayTasks.length > 2 && <div style={{ fontSize: 9, color: "#64748B" }}>+{dayTasks.length - 2}</div>}
+                    {dayTasks.length > 2 && <div style={{ fontSize: 9, color: "var(--text-secondary, #FFFFFF)" }}>+{dayTasks.length - 2}</div>}
                   </div>
                 );
               })}
@@ -932,7 +1292,7 @@ function App() {
         {tab === "reports" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8" }}>📈 التقارير</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)" }}>📈 التقارير</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={s.btnG} onClick={exportCSV}>📥 Excel</button>
                 <button style={s.btnG} onClick={printReport}>🖨️ PDF / طباعة</button>
@@ -940,15 +1300,15 @@ function App() {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>أداء الموظفين</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>أداء الموظفين</div>
                 {employees.map(e => {
                   const total = tasks.filter(t => t.empId === e.id).length;
                   const done = tasks.filter(t => t.empId === e.id && t.status === "تم الإنجاز").length;
                   const late = tasks.filter(t => t.empId === e.id && t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length;
                   return (
-                    <div key={e.id} style={{ marginBottom: 12, padding: 10, background: "#111827", borderRadius: 8 }}>
+                    <div key={e.id} style={{ marginBottom: 12, padding: 10, background: "var(--bg-input, #111827)", borderRadius: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ color: "#CBD5E1", fontWeight: 600 }}>{e.name}</span>
+                        <span style={{ color: "var(--text-secondary, #FFFFFF)", fontWeight: 600 }}>{e.name}</span>
                         <span style={{ color: e.color, fontSize: 12 }}>{total} مهمة</span>
                       </div>
                       <div style={{ display: "flex", gap: 8, fontSize: 11 }}>
@@ -961,15 +1321,15 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>المدفوعات حسب العميل</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>المدفوعات حسب العميل</div>
                 {sortedClients.map(c => {
                   const clientPayments = payments.filter(p => p.clientId === c.id);
                   const totalPaid = clientPayments.filter(p => p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
                   const pending = clientPayments.filter(p => p.status !== "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
                   if (clientPayments.length === 0) return null;
                   return (
-                    <div key={c.id} style={{ marginBottom: 10, padding: 8, background: "#111827", borderRadius: 8 }}>
-                      <div style={{ fontWeight: 600, color: "#CBD5E1", marginBottom: 4, fontSize: 12 }}>{c.name}</div>
+                    <div key={c.id} style={{ marginBottom: 10, padding: 8, background: "var(--bg-input, #111827)", borderRadius: 8 }}>
+                      <div style={{ fontWeight: 600, color: "var(--text-secondary, #FFFFFF)", marginBottom: 4, fontSize: 12 }}>{c.name}</div>
                       <div style={{ display: "flex", gap: 10, fontSize: 11 }}>
                         <span style={{ color: "#34D399" }}>مدفوع: {totalPaid.toLocaleString()} ج</span>
                         {pending > 0 && <span style={{ color: "#EF4444" }}>متبقي: {pending.toLocaleString()} ج</span>}
@@ -979,14 +1339,14 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>المهام حسب التاغ</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>المهام حسب التاغ</div>
                 {tags.map((tg, i) => {
                   const count = tasks.filter(t => t.tags?.includes(tg)).length;
                   if (count === 0) return null;
                   return (
                     <div key={tg} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center" }}>
                       <span style={{ color: TAG_COLORS[i % TAG_COLORS.length], fontSize: 12 }}>{tg}</span>
-                      <span style={{ color: "#94A3B8", fontSize: 12 }}>{count} مهمة</span>
+                      <span style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>{count} مهمة</span>
                     </div>
                   );
                 })}
@@ -1001,20 +1361,20 @@ function App() {
             {managerMsg && (
               <div style={{ background: "linear-gradient(135deg, #1E3A5F, #2D2060)", border: "1px solid #60A5FA44", borderRadius: 14, padding: 24, marginBottom: 20, textAlign: "center" }}>
                 <div style={{ fontSize: 28, marginBottom: 10 }}>📢</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", lineHeight: 1.8 }}>{managerMsg}</div>
-                <div style={{ fontSize: 12, color: "#64748B", marginTop: 10 }}>رسالة من الإدارة</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", lineHeight: 1.8 }}>{managerMsg}</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginTop: 10 }}>رسالة من الإدارة</div>
               </div>
             )}
             {!managerMsg && (
               <div style={{ ...s.card, textAlign: "center", padding: 32, marginBottom: 20 }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
-                <div style={{ color: "#64748B", fontSize: 14 }}>لا توجد رسالة حالياً</div>
+                <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 14 }}>لا توجد رسالة حالياً</div>
               </div>
             )}
             {/* نموذج تعديل الرسالة للمدير فقط */}
             {isAdmin && (
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#94A3B8", marginBottom: 14 }}>✏️ تعديل الرسالة</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>✏️ تعديل الرسالة</div>
                 <textarea
                   rows={4}
                   style={{ ...s.input, marginBottom: 12, resize: "vertical" }}
@@ -1038,51 +1398,96 @@ function App() {
             )}
           </div>
         )}
+
+        {tab === "chat" && (
+          <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", flexDirection: "column", height: "65vh" }}>
+            <div style={{ flex: 1, overflowY: "auto", ...s.card, display: "flex", flexDirection: "column", gap: 10 }}>
+              {chatMessages.length === 0 && (
+                <div style={{ textAlign: "center", color: "var(--text-secondary, #FFFFFF)", padding: 30 }}>💭 ابدأ أول رسالة في شات الفريق</div>
+              )}
+              {chatMessages.map(m => {
+                const mine = m.userId === currentUser.id;
+                return (
+                  <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-start" : "flex-end" }}>
+                    <div style={{ fontSize: 10, color: m.userColor || "#60A5FA", fontWeight: 700, marginBottom: 2 }}>{mine ? "أنت" : m.userName}</div>
+                    <div style={{
+                      background: mine ? "#2563EB" : "var(--bg-panel, #0F172A)",
+                      color: mine ? "#fff" : "var(--text-primary, #F1F5F9)",
+                      padding: "8px 14px", borderRadius: 14, maxWidth: "75%", fontSize: 13, lineHeight: 1.6, wordBreak: "break-word"
+                    }}>{m.text}</div>
+                    <div style={{ fontSize: 9, color: "var(--text-secondary, #FFFFFF)", marginTop: 2 }}>{m.time?.toDate ? m.time.toDate().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                  </div>
+                );
+              })}
+              <div ref={chatEndRef} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input
+                style={{ ...s.input, flex: 1 }}
+                placeholder="اكتب رسالتك..."
+                value={newChatMsg}
+                onChange={e => setNewChatMsg(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && sendChatMessage()}
+              />
+              <button style={s.btnP} onClick={sendChatMessage}>إرسال</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ===== TASK DETAIL ===== */}
-      {selectedTask && (
+      {selectedTask && (() => {
+        const liveTask = tasks.find(t => t.id === selectedTask.id) || selectedTask;
+        return (
         <div style={s.overlay} onClick={() => setSelectedTask(null)}>
           <div style={{ ...s.modal, maxWidth: 500 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#F1F5F9", margin: 0, flex: 1 }}>{selectedTask.title}</h3>
-              <button onClick={() => setSelectedTask(null)} style={{ background: "none", border: "none", color: "#64748B", fontSize: 18, cursor: "pointer" }}>✕</button>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", margin: 0, flex: 1 }}>{liveTask.title}</h3>
+              <button onClick={() => setSelectedTask(null)} style={{ background: "none", border: "none", color: "var(--text-secondary, #FFFFFF)", fontSize: 18, cursor: "pointer" }}>✕</button>
             </div>
+            {otherViewer(liveTask) && (
+              <div style={{ background: "#3B2A0E", color: "#F59E0B", borderRadius: 8, padding: "6px 12px", fontSize: 12, marginBottom: 12 }}>👀 {otherViewer(liveTask)} بيشوف المهمة دي دلوقتي</div>
+            )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-              <span style={{ background: STATUS_BG[selectedTask.status], color: STATUS_COLOR[selectedTask.status], borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{selectedTask.status}</span>
-              <span style={{ background: PRI_COLOR[selectedTask.priority] + "22", color: PRI_COLOR[selectedTask.priority], borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{selectedTask.priority}</span>
-              {selectedTask.due && <span style={{ color: "#64748B", fontSize: 12 }}>📅 {selectedTask.due}</span>}
+              <span style={{ background: STATUS_BG[liveTask.status], color: STATUS_COLOR[liveTask.status], borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{liveTask.status}</span>
+              <span style={{ background: PRI_COLOR[liveTask.priority] + "22", color: PRI_COLOR[liveTask.priority], borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{liveTask.priority}</span>
+              {liveTask.due && <span style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>📅 {liveTask.due}</span>}
             </div>
-            {selectedTask.notes && <div style={{ background: "#0F172A", borderRadius: 8, padding: 10, fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>{selectedTask.notes}</div>}
-            {selectedTask.createdBy && <div style={{ fontSize: 11, color: "#475569", marginBottom: 12 }}>أضافها: {selectedTask.createdBy} • آخر تعديل: {selectedTask.updatedBy || "-"}</div>}
-            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12, marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📎 مرفقات المهمة</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--bg-panel, #0F172A)", borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+              <span style={{ fontSize: 18 }}>⏱️</span>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: liveTask.timerRunning ? "#34D399" : "var(--text-primary, #F1F5F9)" }}>{formatDuration(liveTaskSeconds(liveTask))}{liveTask.timerRunning && " (شغال...)"}</span>
+              <button onClick={() => toggleTaskTimer(liveTask)} style={{ ...(liveTask.timerRunning ? s.btnR : s.btnP), fontSize: 12, padding: "5px 14px" }}>{liveTask.timerRunning ? "⏸ إيقاف" : "▶ ابدأ"}</button>
+            </div>
+            {liveTask.notes && <div style={{ background: "var(--bg-panel, #0F172A)", borderRadius: 8, padding: 10, fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginBottom: 12 }}>{liveTask.notes}</div>}
+            {liveTask.createdBy && <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginBottom: 12 }}>أضافها: {liveTask.createdBy} • آخر تعديل: {liveTask.updatedBy || "-"}</div>}
+            <div style={{ borderTop: "1px solid var(--border-alt, #1E293B)", paddingTop: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 8 }}>📎 مرفقات المهمة</div>
               <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px", marginBottom: 8 }}>
                 {uploading ? "جاري الرفع..." : "+ رفع ملف"}
                 <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async e => {
                   const file = e.target.files[0];
-                  if (file) await uploadAttachment(file, "task", selectedTask.id, selectedTask.title);
+                  if (file) await uploadAttachment(file, "task", liveTask.id, liveTask.title);
                 }} />
               </label>
-              {attachments.filter(a => a.entityId === selectedTask.id).map(a => (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#0F172A", borderRadius: 7, marginBottom: 5 }}>
+              {attachments.filter(a => a.entityId === liveTask.id).map(a => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--bg-panel, #0F172A)", borderRadius: 7, marginBottom: 5 }}>
                   <span>{a.fileType?.includes("pdf") ? "📄" : "🖼️"}</span>
-                  <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 11, flex: 1, textDecoration: "none" }}>{a.name}</a>
-                  <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>
+                  <span onClick={() => setPreviewFile(a)} style={{ color: "#60A5FA", fontSize: 11, flex: 1, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</span>
+                  {isAdmin && <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 6px", fontSize: 9, cursor: "pointer" }}>🗑</button>}
                 </div>
               ))}
             </div>
-            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 10 }}>💬 التعليقات</div>
+            <div style={{ borderTop: "1px solid var(--border-alt, #1E293B)", paddingTop: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 10 }}>💬 التعليقات</div>
               <div style={{ maxHeight: 160, overflowY: "auto", marginBottom: 10 }}>
                 {comments.filter(c => c.taskId === selectedTask.id).map(c => (
-                  <div key={c.id} style={{ background: "#0F172A", borderRadius: 8, padding: 8, marginBottom: 6 }}>
+                  <div key={c.id} style={{ background: "var(--bg-panel, #0F172A)", borderRadius: 8, padding: 8, marginBottom: 6 }}>
                     <div style={{ fontSize: 11, color: "#60A5FA", fontWeight: 700, marginBottom: 2 }}>{c.user}</div>
-                    <div style={{ fontSize: 12, color: "#CBD5E1" }}>{c.text}</div>
-                    <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{c.time?.toDate ? c.time.toDate().toLocaleString("ar-EG") : ""}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)" }}>{c.text}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)", marginTop: 2 }}>{c.time?.toDate ? c.time.toDate().toLocaleString("ar-EG") : ""}</div>
                   </div>
                 ))}
-                {comments.filter(c => c.taskId === selectedTask.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد تعليقات بعد</div>}
+                {comments.filter(c => c.taskId === selectedTask.id).length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>لا توجد تعليقات بعد</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <input style={{ ...s.input, flex: 1 }} placeholder="اكتب تعليق..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => e.key === "Enter" && addComment(selectedTask.id, selectedTask.title, selectedTask.empId)} />
@@ -1091,41 +1496,50 @@ function App() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* ===== CLIENT DETAIL ===== */}
-      {selectedClient && (
+      {selectedClient && (() => {
+        const liveClient = clients.find(c => c.id === selectedClient.id) || selectedClient;
+        return (
         <div style={s.overlay} onClick={() => setSelectedClient(null)}>
           <div style={{ ...s.modal, maxWidth: 560 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>📁 ملف {selectedClient.name}</h3>
-              <button onClick={() => setSelectedClient(null)} style={{ background: "none", border: "none", color: "#64748B", fontSize: 18, cursor: "pointer" }}>✕</button>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", margin: 0 }}>📁 ملف {selectedClient.name}</h3>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button onClick={() => printClientStatement(selectedClient)} style={{ ...s.btnG, fontSize: 11, padding: "5px 12px" }}>🖨 طباعة كشف الحساب</button>
+                <button onClick={() => setSelectedClient(null)} style={{ background: "none", border: "none", color: "var(--text-secondary, #FFFFFF)", fontSize: 18, cursor: "pointer" }}>✕</button>
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>
+            {otherViewer(liveClient) && (
+              <div style={{ background: "#3B2A0E", color: "#F59E0B", borderRadius: 8, padding: "6px 12px", fontSize: 12, marginBottom: 12 }}>👀 {otherViewer(liveClient)} بيشوف ملف العميل ده دلوقتي</div>
+            )}
+            <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginBottom: 16 }}>
               {selectedClient.phone && <div>📞 {selectedClient.phone}</div>}
               {selectedClient.email && <div>📧 {selectedClient.email}</div>}
-              {selectedClient.notes && <div style={{ marginTop: 6, color: "#94A3B8" }}>{selectedClient.notes}</div>}
+              {selectedClient.notes && <div style={{ marginTop: 6, color: "var(--text-secondary, #FFFFFF)" }}>{selectedClient.notes}</div>}
             </div>
 
             {/* سجل الأعمال */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📋 سجل الأعمال</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 8 }}>📋 سجل الأعمال</div>
               {tasks.filter(t => t.clientId === selectedClient.id).map(t => (
-                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "var(--bg-panel, #0F172A)", borderRadius: 8, marginBottom: 6 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: "#CBD5E1", fontWeight: 600 }}>{t.title}</div>
-                    <div style={{ fontSize: 10, color: "#64748B" }}>{getEmp(t.empId)?.name} • {t.due}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", fontWeight: 600 }}>{t.title}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{getEmp(t.empId)?.name} • {t.due}</div>
                   </div>
                   <span style={{ background: STATUS_BG[t.status], color: STATUS_COLOR[t.status], borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{t.status}</span>
                 </div>
               ))}
-              {tasks.filter(t => t.clientId === selectedClient.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مهام</div>}
+              {tasks.filter(t => t.clientId === selectedClient.id).length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>لا توجد مهام</div>}
             </div>
 
             {/* سجل المدفوعات */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8" }}>💰 سجل المدفوعات</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)" }}>💰 سجل المدفوعات</div>
                 <button
                   onClick={() => {
                     setSelectedClient(null);
@@ -1137,17 +1551,17 @@ function App() {
                 </button>
               </div>
               {payments.filter(p => p.clientId === selectedClient.id).map(p => (
-                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "var(--bg-panel, #0F172A)", borderRadius: 8, marginBottom: 6 }}>
                   <div>
                     <div style={{ fontSize: 12, color: "#34D399", fontWeight: 700 }}>{parseFloat(p.amount).toLocaleString()} ج</div>
-                    <div style={{ fontSize: 10, color: "#64748B" }}>{p.type} • {p.date}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{p.type} • {p.date}</div>
                   </div>
                   <span style={{ background: p.status === "مدفوع" ? "#1E4D3A" : "#2D1B1B", color: p.status === "مدفوع" ? "#34D399" : "#EF4444", borderRadius: 5, padding: "2px 8px", fontSize: 11 }}>{p.status}</span>
                 </div>
               ))}
-              {payments.filter(p => p.clientId === selectedClient.id).length === 0 && <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مدفوعات</div>}
-              <div style={{ marginTop: 10, padding: 10, background: "#0F172A", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94A3B8", fontSize: 12 }}>إجمالي المدفوع</span>
+              {payments.filter(p => p.clientId === selectedClient.id).length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>لا توجد مدفوعات</div>}
+              <div style={{ marginTop: 10, padding: 10, background: "var(--bg-panel, #0F172A)", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>إجمالي المدفوع</span>
                 <span style={{ color: "#34D399", fontWeight: 700, fontSize: 14 }}>
                   {payments.filter(p => p.clientId === selectedClient.id && p.status === "مدفوع").reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()} ج
                 </span>
@@ -1155,38 +1569,92 @@ function App() {
             </div>
 
             {/* مرفقات العميل */}
-            <div style={{ borderTop: "1px solid #1E293B", paddingTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 8 }}>📎 مرفقات العميل</div>
-              <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px", marginBottom: 10 }}>
-                {uploading ? "⏳ جاري الرفع..." : "+ رفع ملف"}
-                <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" style={{ display: "none" }} onChange={async e => {
-                  const file = e.target.files[0];
-                  if (file) await uploadAttachment(file, "client", selectedClient.id, selectedClient.name);
-                }} />
-              </label>
+            <div style={{ borderTop: "1px solid var(--border-alt, #1E293B)", paddingTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 8 }}>📎 مستندات العميل</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
+                <select style={{ ...s.input, width: "auto", fontSize: 12, padding: "6px 10px" }} value={docType} onChange={e => setDocType(e.target.value)}>
+                  {DOC_TYPES.map(dt => <option key={dt}>{dt}</option>)}
+                </select>
+                <input type="date" style={{ ...s.input, width: "auto", fontSize: 12, padding: "6px 10px" }} value={docExpiry} onChange={e => setDocExpiry(e.target.value)} title="تاريخ الانتهاء (اختياري)" />
+                <label style={{ ...s.btnG, display: "inline-block", cursor: "pointer", fontSize: 11, padding: "5px 12px" }}>
+                  {uploading ? "⏳ جاري الرفع..." : "+ رفع ملف"}
+                  <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" style={{ display: "none" }} onChange={async e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      await uploadAttachment(file, "client", selectedClient.id, selectedClient.name, docType, docExpiry);
+                      setDocExpiry("");
+                    }
+                  }} />
+                </label>
+              </div>
               {attachments.filter(a => a.entityId === selectedClient.id && a.entityType === "client").length === 0 && (
-                <div style={{ color: "#334155", fontSize: 12 }}>لا توجد مرفقات</div>
+                <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>لا توجد مستندات</div>
               )}
-              {attachments.filter(a => a.entityId === selectedClient.id && a.entityType === "client").map(a => (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#0F172A", borderRadius: 8, marginBottom: 6 }}>
+              {attachments.filter(a => a.entityId === selectedClient.id && a.entityType === "client").map(a => {
+                const expDiff = a.expiry ? daysDiff(a.expiry) : null;
+                const expWarn = expDiff !== null && expDiff <= 14;
+                const expColor = expDiff !== null && expDiff < 0 ? "#EF4444" : "#F59E0B";
+                return (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "var(--bg-panel, #0F172A)", borderRadius: 8, marginBottom: 6, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 16 }}>
                     {a.fileType?.includes("pdf") ? "📄" : a.fileType?.includes("image") ? "🖼️" : a.fileType?.includes("sheet") || a.name?.endsWith(".xlsx") ? "📊" : "📁"}
                   </span>
-                  <a href={a.url} target="_blank" rel="noreferrer" style={{ color: "#60A5FA", fontSize: 12, flex: 1, textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</a>
-                  <span style={{ fontSize: 10, color: "#475569", whiteSpace: "nowrap" }}>{a.uploadedBy}</span>
-                  <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 7px", fontSize: 10, cursor: "pointer" }}>🗑</button>
+                  <span onClick={() => setPreviewFile(a)} style={{ color: "#60A5FA", fontSize: 12, flex: 1, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 100 }}>{a.name}</span>
+                  {a.docType && <span style={{ background: "var(--border, #1E3A5F)", color: "#60A5FA", borderRadius: 5, padding: "1px 7px", fontSize: 10, whiteSpace: "nowrap" }}>{a.docType}</span>}
+                  {a.expiry && <span style={{ background: expWarn ? expColor + "22" : "var(--border-alt, #1E293B)", color: expWarn ? expColor : "var(--text-secondary, #FFFFFF)", borderRadius: 5, padding: "1px 7px", fontSize: 10, whiteSpace: "nowrap" }}>{expDiff < 0 ? "⚠️ منتهي" : expWarn ? "⚠️" : "📅"} {a.expiry}</span>}
+                  <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)", whiteSpace: "nowrap" }}>{a.uploadedBy}</span>
+                  {isAdmin && <button onClick={() => deleteAttachment(a)} style={{ background: "#2D1B1B", color: "#EF4444", border: "none", borderRadius: 4, padding: "2px 7px", fontSize: 10, cursor: "pointer" }}>🗑</button>}
                 </div>
-              ))}
+              );})}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
+
+      {/* ===== EMPLOYEE DETAIL (تُظهر مهام الموظف) ===== */}
+      {selectedEmp && (() => {
+        const liveEmp = employees.find(e => e.id === selectedEmp.id) || selectedEmp;
+        const empTasks = tasks.filter(t => t.empId === selectedEmp.id).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+        const rating = getEmployeeRating(selectedEmp.id);
+        return (
+          <div style={s.overlay} onClick={() => setSelectedEmp(null)}>
+            <div style={{ ...s.modal, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div onClick={() => selectedEmp.photo && setLightboxImg(selectedEmp.photo)} style={{ width: 54, height: 54, borderRadius: "50%", overflow: "hidden", background: selectedEmp.color + "22", border: `2px solid ${selectedEmp.color}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: selectedEmp.photo ? "zoom-in" : "default" }}>
+                    {selectedEmp.photo ? <img src={selectedEmp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 22, color: selectedEmp.color, fontWeight: 900 }}>{selectedEmp.name[0]}</span>}
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", margin: 0 }}>{selectedEmp.name} {selectedEmp.role === "admin" ? "👑" : ""}</h3>
+                    {rating.count > 0 && <div style={{ fontSize: 13, color: "#F59E0B", marginTop: 3 }}>{"⭐".repeat(rating.stars)}{"☆".repeat(5 - rating.stars)} <span style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>({rating.onTimePct}% في الموعد من {rating.count} مهمة)</span></div>}
+                    <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginTop: 3 }}>{formatLastSeen(liveEmp)}</div>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedEmp(null)} style={{ background: "none", border: "none", color: "var(--text-secondary, #FFFFFF)", fontSize: 18, cursor: "pointer" }}>✕</button>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 10 }}>📋 مهام {selectedEmp.name} ({empTasks.length})</div>
+              <div style={{ maxHeight: "55vh", overflowY: "auto" }}>
+                {empTasks.length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 13, textAlign: "center", padding: 20 }}>لا توجد مهام مسندة</div>}
+                {empTasks.map(t => (
+                  <div key={t.id} onClick={() => { setSelectedEmp(null); setSelectedTask(t); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "var(--bg-panel, #0F172A)", borderRadius: 8, marginBottom: 6, cursor: "pointer" }}>
+                    <span style={{ background: STATUS_BG[t.status], color: STATUS_COLOR[t.status], borderRadius: 5, padding: "2px 8px", fontSize: 10, whiteSpace: "nowrap" }}>{t.status}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: "var(--text-primary, #F1F5F9)" }}>{t.title}</span>
+                    {t.clientId && <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{getClient(t.clientId)?.name}</span>}
+                    {t.due && <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>📅 {t.due}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ===== PROFILE MODAL ===== */}
       {profileModal && (
         <div style={s.overlay} onClick={() => setProfileModal(false)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>⚙️ إعدادات حسابي</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>⚙️ إعدادات حسابي</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ width: 70, height: 70, borderRadius: "50%", overflow: "hidden", background: currentUser.color + "33", border: `2px solid ${currentUser.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", cursor: "pointer" }} onClick={() => fileInputRef.current?.click()}>
@@ -1227,7 +1695,7 @@ function App() {
       {modal === "task" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>{form.id ? "✏️ تعديل المهمة" : "➕ مهمة جديدة"}</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>{form.id ? "✏️ تعديل المهمة" : "➕ مهمة جديدة"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input style={s.input} placeholder="عنوان المهمة *" value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} />
               <select style={s.input} value={form.empId || ""} onChange={e => setForm({ ...form, empId: e.target.value })}>
@@ -1248,7 +1716,7 @@ function App() {
               </div>
               <input type="date" style={s.input} value={form.due || ""} onChange={e => setForm({ ...form, due: e.target.value })} />
               <div>
-                <div style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>التاغات:</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginBottom: 6 }}>التاغات:</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
                   {tags.map((tg, i) => (
                     <span key={tg} onClick={() => toggleTag(tg)} style={{ display: "inline-flex", alignItems: "center", borderRadius: 5, padding: "3px 9px", fontSize: 11, cursor: "pointer", border: "1px solid", color: TAG_COLORS[i % TAG_COLORS.length], borderColor: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "" : "44"), background: TAG_COLORS[i % TAG_COLORS.length] + (form.tags?.includes(tg) ? "33" : "11") }}>{tg}</span>
@@ -1263,7 +1731,7 @@ function App() {
               </div>
               <textarea rows={2} style={s.input} placeholder="ملاحظات" value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
               {/* خانة المدفوعات */}
-              <div style={{ background: "#0F172A", border: "1px solid #1E3A5F", borderRadius: 10, padding: 12 }}>
+              <div style={{ background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 10, padding: 12 }}>
                 <div style={{ fontSize: 13, color: "#F59E0B", fontWeight: 700, marginBottom: 10 }}>💰 المدفوعات (اختياري)</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <input style={s.input} type="number" placeholder="المبلغ (ج.م)" value={form.amount || ""} onChange={e => setForm({ ...form, amount: e.target.value })} />
@@ -1273,7 +1741,7 @@ function App() {
                     <option>لم يدفع</option>
                   </select>
                 </div>
-                {form.amount && <div style={{ fontSize: 11, color: "#64748B", marginTop: 6 }}>سيتم إضافة هذا المبلغ تلقائياً لكشف المدفوعات</div>}
+                {form.amount && <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginTop: 6 }}>سيتم إضافة هذا المبلغ تلقائياً لكشف المدفوعات</div>}
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
@@ -1288,8 +1756,8 @@ function App() {
       {modal === "transfer" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={{ ...s.modal, maxWidth: 360 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>🔄 نقل المهمة</h3>
-            <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 12 }}>"{form.title}"</div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>🔄 نقل المهمة</h3>
+            <div style={{ fontSize: 13, color: "var(--text-secondary, #FFFFFF)", marginBottom: 12 }}>"{form.title}"</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <select style={s.input} value={form.newEmpId || ""} onChange={e => setForm({ ...form, newEmpId: e.target.value })}>
                 <option value="">-- اختر موظف --</option>
@@ -1308,22 +1776,32 @@ function App() {
       {modal === "emp" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>{form.id ? "✏️ تعديل موظف" : "👤 موظف جديد"}</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>{form.id ? "✏️ تعديل موظف" : "👤 موظف جديد"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {form.id && (
                 <div style={{ textAlign: "center", marginBottom: 6 }}>
                   <div style={{ width: 64, height: 64, borderRadius: "50%", overflow: "hidden", background: (form.color || "#60A5FA") + "33", border: `2px solid ${form.color || "#60A5FA"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
                     {form.photo ? <img src={form.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 24, color: form.color || "#60A5FA", fontWeight: 900 }}>{form.name?.[0]}</span>}
                   </div>
-                  {form.photo && (
-                    <button style={{ ...s.btnR, fontSize: 12, padding: "5px 14px" }} onClick={() => {
-                      const prevPhoto = form.photo;
-                      setForm(f => ({ ...f, photo: "" }));
-                      showUndoToast("تم حذف صورة الموظف (لم يتم الحفظ بعد)", async () => {
-                        setForm(f => ({ ...f, photo: prevPhoto }));
-                      });
-                    }}>🗑 حذف الصورة</button>
-                  )}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <button style={{ ...s.btnG, fontSize: 12, padding: "5px 14px" }} onClick={() => empFileInputRef.current?.click()}>تغيير الصورة</button>
+                    {form.photo && (
+                      <button style={{ ...s.btnR, fontSize: 12, padding: "5px 14px" }} onClick={() => {
+                        const prevPhoto = form.photo;
+                        setForm(f => ({ ...f, photo: "" }));
+                        showUndoToast("تم حذف صورة الموظف (لم يتم الحفظ بعد)", async () => {
+                          setForm(f => ({ ...f, photo: prevPhoto }));
+                        });
+                      }}>🗑 حذف الصورة</button>
+                    )}
+                  </div>
+                  <input ref={empFileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const url = await uploadPhoto(file);
+                      setForm(f => ({ ...f, photo: url }));
+                    }
+                  }} />
                 </div>
               )}
               <input style={s.input} placeholder="الاسم *" value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -1334,8 +1812,8 @@ function App() {
                 <option value="admin">Admin 👑</option>
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <label style={{ color: "#94A3B8", fontSize: 13 }}>اللون:</label>
-                <input type="color" value={form.color || "#60A5FA"} onChange={e => setForm({ ...form, color: e.target.value })} style={{ width: 44, height: 32, padding: 2, background: "none", border: "1px solid #1E3A5F", borderRadius: 6, cursor: "pointer" }} />
+                <label style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 13 }}>اللون:</label>
+                <input type="color" value={form.color || "#60A5FA"} onChange={e => setForm({ ...form, color: e.target.value })} style={{ width: 44, height: 32, padding: 2, background: "none", border: "1px solid var(--border, #1E3A5F)", borderRadius: 6, cursor: "pointer" }} />
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button style={s.btnG} onClick={() => setModal(null)}>إلغاء</button>
@@ -1350,7 +1828,7 @@ function App() {
       {modal === "client" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>{form.id ? "✏️ تعديل عميل" : "🏢 عميل جديد"}</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>{form.id ? "✏️ تعديل عميل" : "🏢 عميل جديد"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input style={s.input} placeholder="اسم العميل *" value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} />
               <input style={s.input} placeholder="رقم الهاتف" value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} />
@@ -1369,7 +1847,7 @@ function App() {
       {modal === "payment" && (
         <div style={s.overlay} onClick={() => setModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#F1F5F9" }}>💰 إضافة مدفوعة</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--text-primary, #F1F5F9)" }}>💰 إضافة مدفوعة</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <select style={s.input} value={form.clientId || ""} onChange={e => setForm({ ...form, clientId: e.target.value })}>
                 <option value="">-- اختر عميل --</option>
@@ -1399,32 +1877,81 @@ function App() {
         </div>
       )}
 
+      {/* ===== ATTACHMENT PREVIEW ===== */}
+      {previewFile && (
+        <div style={{ ...s.overlay, zIndex: 700 }} onClick={() => setPreviewFile(null)}>
+          <div style={{ background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 16, padding: 20, width: "100%", maxWidth: 720, maxHeight: "90vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{previewFile.name}</div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <a href={downloadUrl(previewFile.url)} download={previewFile.name} style={{ ...s.btnG, fontSize: 12, padding: "6px 12px", textDecoration: "none", display: "inline-block" }}>⬇ تحميل</a>
+                <button onClick={() => setPreviewFile(null)} style={{ background: "none", border: "none", color: "var(--text-secondary, #FFFFFF)", fontSize: 20, cursor: "pointer" }}>✕</button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)", borderRadius: 10, minHeight: 200 }}>
+              {previewFile.fileType?.includes("image") ? (
+                <img src={previewFile.url} alt={previewFile.name} style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: 8 }} />
+              ) : previewFile.fileType?.includes("pdf") ? (
+                <iframe src={previewFile.url} title={previewFile.name} style={{ width: "100%", height: "65vh", border: "none", borderRadius: 8, background: "#fff" }} />
+              ) : (
+                <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary, #FFFFFF)" }}>
+                  <div style={{ fontSize: 40, marginBottom: 10 }}>📁</div>
+                  <div style={{ fontSize: 13 }}>لا تتوفر معاينة لهذا النوع من الملفات</div>
+                  <div style={{ fontSize: 11, marginTop: 4 }}>استخدم زر التحميل لفتحه</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== PHOTO LIGHTBOX ===== */}
+      {lightboxImg && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 800, cursor: "zoom-out", padding: 24 }} onClick={() => setLightboxImg(null)}>
+          <img src={lightboxImg} alt="" style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 12, boxShadow: "0 20px 60px rgba(0,0,0,0.7)" }} />
+          <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, left: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 22, width: 40, height: 40, borderRadius: "50%", cursor: "pointer" }}>✕</button>
+        </div>
+      )}
+
       {/* ===== UNDO TOAST ===== */}
       {undoToast && (
         <div style={{
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          background: "#111827", border: "1px solid #2563EB", borderRadius: 12,
+          background: "var(--bg-input, #111827)", border: "1px solid #2563EB", borderRadius: 12,
           padding: "12px 18px", display: "flex", alignItems: "center", gap: 14,
           boxShadow: "0 8px 30px rgba(0,0,0,0.5)", zIndex: 500, maxWidth: "92vw"
         }}>
-          <span style={{ fontSize: 14, color: "#F1F5F9", fontWeight: 600 }}>{undoToast.message}</span>
+          <span style={{ fontSize: 14, color: "var(--text-primary, #F1F5F9)", fontWeight: 600 }}>{undoToast.message}</span>
           <button onClick={runUndo} style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>↩ تراجع</button>
-          <button onClick={dismissUndo} style={{ background: "none", border: "none", color: "#64748B", fontSize: 16, cursor: "pointer", padding: 0 }}>✕</button>
+          <button onClick={dismissUndo} style={{ background: "none", border: "none", color: "var(--text-secondary, #FFFFFF)", fontSize: 16, cursor: "pointer", padding: 0 }}>✕</button>
         </div>
       )}
 
       {/* ===== MOTIVATION POPUP ===== */}
       {motivationMsg && (
-        <div style={{
-          position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-          background: "linear-gradient(135deg, #1E4D3A, #2D2060)",
-          border: "2px solid #34D399", borderRadius: 20,
-          padding: "32px 40px", textAlign: "center",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.7)", zIndex: 600, maxWidth: "90vw"
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#F1F5F9", lineHeight: 1.6 }}>{motivationMsg}</div>
-          <div style={{ fontSize: 13, color: "#34D399", marginTop: 10 }}>تم الإنجاز بنجاح!</div>
+        <div style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.35)", overflow: "hidden" }} onClick={() => setMotivationMsg(null)}>
+          {Array.from({ length: 22 }).map((_, i) => {
+            const emoji = CONFETTI_EMOJIS[Math.floor(Math.random() * CONFETTI_EMOJIS.length)];
+            const left = Math.random() * 100;
+            const duration = 2 + Math.random() * 1.8;
+            const delay = Math.random() * 0.6;
+            const size = 18 + Math.random() * 18;
+            return (
+              <span key={i} style={{ position: "absolute", left: `${left}%`, top: "-40px", fontSize: size, animation: `confettiFall ${duration}s ease-in ${delay}s forwards` }}>{emoji}</span>
+            );
+          })}
+          <div style={{
+            position: "fixed", top: "50%", left: "50%",
+            background: "linear-gradient(135deg, #1E4D3A, #2D2060)",
+            border: "2px solid #34D399", borderRadius: 20,
+            padding: "32px 40px", textAlign: "center",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.7)", maxWidth: "90vw",
+            animation: "celebPopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards"
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 52, marginBottom: 12, animation: "celebBounce 1.1s ease-in-out infinite" }}>🎉</div>
+            <div style={{ fontSize: 19, fontWeight: 700, color: "var(--text-primary, #F1F5F9)", lineHeight: 1.6 }}>{motivationMsg}</div>
+            <div style={{ fontSize: 13, color: "#34D399", marginTop: 10, fontWeight: 700 }}>✨ تم الإنجاز بنجاح! ✨</div>
+          </div>
         </div>
       )}
 
@@ -1439,7 +1966,7 @@ function App() {
           cursor: "pointer"
         }} onClick={() => setTab("managermsg")}>
           <div style={{ fontSize: 11, color: "#60A5FA", fontWeight: 700, marginBottom: 4 }}>📢 رسالة من الإدارة</div>
-          <div style={{ fontSize: 12, color: "#CBD5E1", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{managerMsg}</div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{managerMsg}</div>
         </div>
       )}
     </div>
@@ -1447,4 +1974,3 @@ function App() {
 }
 
 export default App;
-// Sat Jul 11 03:21:43     2026
