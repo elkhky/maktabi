@@ -195,6 +195,7 @@ function App() {
   const [theme, setTheme] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-theme")) || "dark");
   useEffect(() => { localStorage.setItem("maktabi-theme", theme); }, [theme]);
   const [monthlyReportSeen, setMonthlyReportSeen] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-monthly-report-seen")) || "");
+  const [weeklySummarySeen, setWeeklySummarySeen] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-weekly-summary-seen")) || "");
   const [soundEnabled, setSoundEnabled] = useState(() => (typeof window !== "undefined" && localStorage.getItem("maktabi-sound")) !== "off");
   useEffect(() => { localStorage.setItem("maktabi-sound", soundEnabled ? "on" : "off"); }, [soundEnabled]);
   const prevUnreadRef = useRef(0);
@@ -233,9 +234,9 @@ function App() {
     }));
     unsubs.push(onSnapshot(collection(db, "tasks"), snap => setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "clients"), snap => setClients(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
-    unsubs.push(onSnapshot(collection(db, "payments"), snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(query(collection(db, "payments"), orderBy("date", "desc")), snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(query(collection(db, "activity"), orderBy("time", "desc")), snap => setActivityLog(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
-    unsubs.push(onSnapshot(collection(db, "comments"), snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
+    unsubs.push(onSnapshot(query(collection(db, "comments"), orderBy("time", "asc")), snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "attachments"), snap => setAttachments(snap.docs.map(d => ({ id: d.id, ...d.data() })))));
     unsubs.push(onSnapshot(collection(db, "tags"), snap => {
       if (snap.docs.length > 0) setTags(snap.docs.map(d => d.data().name));
@@ -613,6 +614,31 @@ function App() {
     return { stars, count: empTasks.length, onTimePct: pct };
   }
 
+  // ========== WEEKLY SUMMARY (يظهر يوم السبت - بداية الأسبوع) ==========
+  function getWeeklySummary() {
+    const today = new Date();
+    const weekEnd = new Date(today); weekEnd.setDate(today.getDate() - 1); // أمس (آخر يوم في الأسبوع اللي فات)
+    const weekStart = new Date(today); weekStart.setDate(today.getDate() - 7); // من أسبوع
+    const fmt = d => d.toISOString().split("T")[0];
+    const startStr = fmt(weekStart), endStr = fmt(weekEnd);
+    const doneLastWeek = tasks.filter(t => t.completedAt && t.completedAt >= startStr && t.completedAt <= endStr);
+    const byEmp = {};
+    doneLastWeek.forEach(t => { if (t.empId) byEmp[t.empId] = (byEmp[t.empId] || 0) + 1; });
+    let topEmpId = null, topEmpCount = 0;
+    Object.entries(byEmp).forEach(([id, c]) => { if (c > topEmpCount) { topEmpCount = c; topEmpId = id; } });
+    const byClient = {};
+    doneLastWeek.forEach(t => { if (t.clientId) byClient[t.clientId] = (byClient[t.clientId] || 0) + 1; });
+    let topClientId = null, topClientCount = 0;
+    Object.entries(byClient).forEach(([id, c]) => { if (c > topClientCount) { topClientCount = c; topClientId = id; } });
+    return {
+      count: doneLastWeek.length,
+      topEmp: topEmpId ? getEmp(topEmpId) : null, topEmpCount,
+      topClient: topClientId ? getClient(topClientId) : null, topClientCount,
+      startStr, endStr
+    };
+  }
+
+
   // ========== TAGS ==========
   async function addNewTag() {
     if (!newTag.trim() || tags.includes(newTag.trim())) return;
@@ -676,7 +702,7 @@ function App() {
     if (filterEmp !== "all") t = t.filter(x => x.empId === filterEmp);
     if (filterTag !== "all") t = t.filter(x => x.tags && x.tags.includes(filterTag));
     if (search.trim()) t = t.filter(x => x.title?.includes(search.trim()));
-    if (sortBy === "due") t = [...t].sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : 1);
+    if (sortBy === "due") t = [...t].sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
     if (sortBy === "priority") {
       const order = { "عالية": 0, "متوسطة": 1, "منخفضة": 2 };
       t = [...t].sort((a, b) => (order[a.priority] || 0) - (order[b.priority] || 0));
@@ -907,6 +933,27 @@ function App() {
                 <button onClick={() => { const k = `${new Date().getFullYear()}-${new Date().getMonth()}`; localStorage.setItem("maktabi-monthly-report-seen", k); setMonthlyReportSeen(k); }} style={{ ...s.btnG, fontSize: 12, padding: "7px 14px" }}>تجاهل</button>
               </div>
             )}
+            {(() => {
+              const isSaturday = new Date().getDay() === 6;
+              const weekKey = `${new Date().getFullYear()}-W${Math.floor(new Date().getTime() / (7 * 86400000))}`;
+              if (!isSaturday || weeklySummarySeen === weekKey) return null;
+              const summary = getWeeklySummary();
+              if (summary.count === 0) return null;
+              return (
+                <div style={{ background: "linear-gradient(135deg, #1E4D3A, #2D2060)", border: "1px solid #34D39944", borderRadius: 12, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 22 }}>📬</span>
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary, #F1F5F9)" }}>صباح الخير! ده ملخص الأسبوع اللي فات 👇</div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginTop: 3 }}>
+                      ✅ {summary.count} مهمة اتنجزت
+                      {summary.topEmp && ` • 🏆 أسرع إنجاز: ${summary.topEmp.name} (${summary.topEmpCount} مهمة)`}
+                      {summary.topClient && ` • 🏢 أكتر عميل اشتغلنا معاه: ${summary.topClient.name}`}
+                    </div>
+                  </div>
+                  <button onClick={() => { const k = `${new Date().getFullYear()}-W${Math.floor(new Date().getTime() / (7 * 86400000))}`; localStorage.setItem("maktabi-weekly-summary-seen", k); setWeeklySummarySeen(k); }} style={{ ...s.btnG, fontSize: 12, padding: "7px 14px" }}>تمام 👍</button>
+                </div>
+              );
+            })()}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "إجمالي المهام", val: tasks.length, color: "#60A5FA" },
@@ -1212,7 +1259,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1).map(p => {
+                  {[...payments].sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.id.localeCompare(b.id)).map(p => {
                     const client = getClient(p.clientId);
                     return (
                       <tr key={p.id} style={{ borderBottom: "1px solid var(--bg-panel, #0F172A)" }}>
@@ -1480,7 +1527,7 @@ function App() {
             <div style={{ borderTop: "1px solid var(--border-alt, #1E293B)", paddingTop: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 10 }}>💬 التعليقات</div>
               <div style={{ maxHeight: 160, overflowY: "auto", marginBottom: 10 }}>
-                {comments.filter(c => c.taskId === selectedTask.id).map(c => (
+                {comments.filter(c => c.taskId === selectedTask.id).sort((a, b) => (a.time?.toMillis?.() || 0) - (b.time?.toMillis?.() || 0) || a.id.localeCompare(b.id)).map(c => (
                   <div key={c.id} style={{ background: "var(--bg-panel, #0F172A)", borderRadius: 8, padding: 8, marginBottom: 6 }}>
                     <div style={{ fontSize: 11, color: "#60A5FA", fontWeight: 700, marginBottom: 2 }}>{c.user}</div>
                     <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)" }}>{c.text}</div>
@@ -1832,6 +1879,13 @@ function App() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input style={s.input} placeholder="اسم العميل *" value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} />
               <input style={s.input} placeholder="رقم الهاتف" value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              {(() => {
+                const phone = form.phone?.trim();
+                if (!phone) return null;
+                const dup = clients.find(c => c.phone?.trim() === phone && c.id !== form.id);
+                if (!dup) return null;
+                return <div style={{ background: "#3B2A0E", color: "#F59E0B", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>⚠️ الرقم ده مسجل بالفعل باسم "{dup.name}" — متأكد إنه عميل تاني؟</div>;
+              })()}
               <input style={s.input} placeholder="البريد الإلكتروني" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} />
               <textarea rows={2} style={s.input} placeholder="ملاحظات" value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
