@@ -35,43 +35,9 @@ const MOTIVATIONAL_MSGS = [
 
 const CONFETTI_EMOJIS = ["🎉", "🎊", "✨", "⭐", "🥳", "🏆", "🎈", "💫", "🌟"];
 
-// ========== MODERN COLOR PALETTE ==========
-const COLORS = {
-  primary: "#3B82F6",
-  primaryDark: "#1E40AF",
-  secondary: "#10B981",
-  danger: "#EF4444",
-  warning: "#F59E0B",
-  success: "#34D399",
-  bg_dark: "#0A0E17",
-  bg_panel: "#0F172A",
-  bg_input: "#111827",
-  text_primary: "#F1F5F9",
-  text_secondary: "#CBD5E1",
-  text_muted: "#94A3B8",
-  border: "#1E293B",
-  border_light: "#334155",
-};
-
-const SHADOWS = {
-  sm: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  md: "0 4px 12px rgba(0, 0, 0, 0.15)",
-  lg: "0 8px 24px rgba(0, 0, 0, 0.2)",
-  xl: "0 12px 32px rgba(0, 0, 0, 0.3)",
-  blue: "0 4px 12px rgba(59, 130, 246, 0.15)",
-};
-
-const GRADIENTS = {
-  primary: "linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)",
-  success: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-  danger: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-  warning: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-  panel: "linear-gradient(135deg, #0F172A 0%, #111827 100%)",
-};
-
 // ========== CONSTANTS ==========
 const APP_NAME = "المركز الاستشاري للمحاسبة";
-const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار النواقص", "قيد المراجعة", "تم الإنجاز"];
+const STATUSES = ["قيد الانتظار", "جاري العمل", "بانتظار النواقص", "قيد المراجعة", "تم الإنجاز", "فاقد"];
 const PRIORITIES = ["عالية", "متوسطة", "منخفضة"];
 const DEFAULT_TAGS = ["ضرائب عامة", "ضرائب قيمة مضافة", "سفر", "مجلس مدينة", "تأمينات", "ميزانيات", "إقرارات"];
 const DOC_TYPES = ["إقرار ضريبي", "عقد", "فاتورة", "سجل تجاري", "بطاقة ضريبية", "تأمينات", "أخرى"];
@@ -79,11 +45,11 @@ const TAG_COLORS = ["#60A5FA", "#34D399", "#A78BFA", "#F59E0B", "#F472B6", "#2DD
 
 const STATUS_COLOR = {
   "قيد الانتظار": "#60A5FA", "جاري العمل": "#F59E0B",
-  "بانتظار النواقص": "#F472B6", "قيد المراجعة": "#A78BFA", "تم الإنجاز": "#34D399",
+  "بانتظار النواقص": "#F472B6", "قيد المراجعة": "#A78BFA", "تم الإنجاز": "#34D399", "فاقد": "#9CA3AF",
 };
 const STATUS_BG = {
   "قيد الانتظار": "#1E3A5F", "جاري العمل": "#3B2A0E",
-  "بانتظار النواقص": "#3B1A2E", "قيد المراجعة": "#2D2060", "تم الإنجاز": "#1E4D3A",
+  "بانتظار النواقص": "#3B1A2E", "قيد المراجعة": "#2D2060", "تم الإنجاز": "#1E4D3A", "فاقد": "#374151",
 };
 const PRI_COLOR = { "عالية": "#EF4444", "متوسطة": "#F59E0B", "منخفضة": "#22C55E" };
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
@@ -126,105 +92,15 @@ function urgencyInfo(due) {
 }
 
 const s = {
-  wrap: { 
-    minHeight: "100vh", 
-    background: COLORS.bg_dark, 
-    fontFamily: "'Cairo','Tajawal',sans-serif", 
-    direction: "rtl", 
-    color: COLORS.text_primary, 
-    fontSize: 15,
-    transition: "background 0.3s ease"
-  },
-  header: { 
-    background: COLORS.bg_panel, 
-    borderBottom: `1px solid ${COLORS.border}`, 
-    padding: "16px 24px", 
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "space-between", 
-    flexWrap: "wrap", 
-    gap: 14,
-    boxShadow: SHADOWS.md,
-  },
-  btnP: { 
-    background: GRADIENTS.primary, 
-    color: "#fff", 
-    border: "none", 
-    padding: "11px 20px", 
-    borderRadius: 10, 
-    cursor: "pointer", 
-    fontFamily: "inherit", 
-    fontWeight: 700, 
-    fontSize: 14,
-    transition: "all 0.3s ease",
-    boxShadow: SHADOWS.blue,
-  },
-  btnG: { 
-    background: COLORS.bg_panel, 
-    border: `1px solid ${COLORS.border_light}`, 
-    color: COLORS.text_secondary, 
-    padding: "11px 20px", 
-    borderRadius: 10, 
-    cursor: "pointer", 
-    fontFamily: "inherit", 
-    fontWeight: 700, 
-    fontSize: 14,
-    transition: "all 0.3s ease",
-  },
-  btnR: { 
-    background: "rgba(239, 68, 68, 0.1)", 
-    color: "#FCA5A5", 
-    border: `1px solid rgba(239, 68, 68, 0.3)`, 
-    padding: "9px 16px", 
-    borderRadius: 8, 
-    cursor: "pointer", 
-    fontFamily: "inherit", 
-    fontWeight: 700, 
-    fontSize: 13,
-    transition: "all 0.3s ease",
-  },
-  card: { 
-    background: COLORS.bg_panel, 
-    border: `1px solid ${COLORS.border}`, 
-    borderRadius: 14, 
-    padding: 18,
-    boxShadow: SHADOWS.sm,
-    transition: "all 0.3s ease",
-  },
-  input: { 
-    background: COLORS.bg_input, 
-    border: `1px solid ${COLORS.border}`, 
-    color: COLORS.text_primary, 
-    padding: "12px 14px", 
-    borderRadius: 10, 
-    fontFamily: "inherit", 
-    fontSize: 14, 
-    width: "100%", 
-    outline: "none",
-    transition: "all 0.3s ease",
-  },
-  overlay: { 
-    position: "fixed", 
-    inset: 0, 
-    background: "rgba(0, 0, 0, 0.5)", 
-    backdropFilter: "blur(4px)",
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    zIndex: 200, 
-    padding: 16 
-  },
-  modal: { 
-    background: GRADIENTS.panel, 
-    border: `1px solid ${COLORS.border}`, 
-    borderRadius: 18, 
-    padding: 28, 
-    width: "100%", 
-    maxWidth: 480, 
-    maxHeight: "90vh", 
-    overflowY: "auto",
-    boxShadow: SHADOWS.xl,
-  },
+  wrap: { minHeight: "100vh", background: "var(--bg-page, #0A0F1E)", fontFamily: "'Cairo','Tajawal',sans-serif", direction: "rtl", color: "var(--text-primary, #F1F5F9)", fontSize: 15 },
+  header: { background: "var(--bg-panel, #0F172A)", borderBottom: "1px solid var(--border, #1E3A5F)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
+  btnP: { background: "#2563EB", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
+  btnG: { background: "var(--btn-secondary-bg, rgba(255,255,255,0.08))", border: "1px solid var(--btn-secondary-border, rgba(255,255,255,0.15))", color: "var(--text-secondary, #FFFFFF)", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 },
+  btnR: { background: "#3B1414", color: "#FCA5A5", border: "1px solid #EF444455", padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 13 },
+  card: { background: "var(--bg-panel, #0F172A)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 12, padding: 16 },
+  input: { background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", color: "var(--text-primary, #F1F5F9)", padding: "10px 13px", borderRadius: 8, fontFamily: "inherit", fontSize: 14, width: "100%", outline: "none" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 },
+  modal: { background: "var(--bg-input, #111827)", border: "1px solid var(--border, #1E3A5F)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" },
 };
 
 const TABS = [
@@ -238,6 +114,7 @@ const TABS = [
   { key: "reports", label: "📈 التقارير" },
   { key: "managermsg", label: "💬 رسالة المدير" },
   { key: "chat", label: "💭 الشات" },
+  { key: "archive", label: "🗄 الأرشيف" },
 ];
 
 // ========== LOGIN ==========
@@ -325,6 +202,8 @@ function App() {
   const prevUnreadRef = useRef(0);
   const [quickDueEditId, setQuickDueEditId] = useState(null);
   const [quickDueValue, setQuickDueValue] = useState("");
+  const [archiveSearch, setArchiveSearch] = useState("");
+  const [archiveMonth, setArchiveMonth] = useState("all");
   const fileInputRef = useRef(null);
   const empFileInputRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -391,13 +270,14 @@ function App() {
     if (!currentUser || tasks.length === 0) return;
     const today = new Date().toISOString().split("T")[0];
     tasks.forEach(async t => {
-      if (t.status === "تم الإنجاز" || !t.due || t.lastReminded === today) return;
+      if (["تم الإنجاز", "فاقد"].includes(t.status) || !t.due || t.lastReminded === today) return;
       const diff = daysDiff(t.due);
       if (diff === null || diff > 2) return;
       const msg = diff < 0 ? `⚠️ مهمة متأخرة: "${t.title}"` : diff === 0 ? `⏰ مهمة "${t.title}" موعدها النهاردة` : `⏰ باقي ${diff} يوم على "${t.title}"`;
       if (t.empId) await sendNotification(t.empId, msg);
+      if (t.empId2) await sendNotification(t.empId2, msg);
       if (diff < 0) {
-        const admins = employees.filter(e => e.role === "admin" && e.id !== t.empId);
+        const admins = employees.filter(e => e.role === "admin" && e.id !== t.empId && e.id !== t.empId2);
         for (const a of admins) await sendNotification(a.id, msg);
       }
       await updateDoc(doc(db, "tasks", t.id), { lastReminded: today });
@@ -469,7 +349,7 @@ function App() {
   async function saveTask() {
     if (!form.title?.trim()) return;
     const t = {
-      title: form.title, empId: form.empId || "", clientId: form.clientId || "",
+      title: form.title, empId: form.empId || "", empId2: form.empId2 || "", clientId: form.clientId || "",
       status: form.status || "قيد الانتظار", priority: form.priority || "متوسطة",
       due: form.due || "", notes: form.notes || "", tags: form.tags || [],
       amount: form.amount || "", amountStatus: form.amountStatus || "لم يدفع",
@@ -479,19 +359,23 @@ function App() {
       await updateDoc(doc(db, "tasks", form.id), t);
       await logActivity("تعديل مهمة", form.title);
       if (form.empId && form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تعديل مهمتك: ${form.title}`);
+      if (form.empId2 && form.empId2 !== currentUser?.id) await sendNotification(form.empId2, `تم تعديل مهمتك: ${form.title}`);
     } else {
-      await addDoc(collection(db, "tasks"), { ...t, createdBy: currentUser?.name, createdAt: serverTimestamp() });
+      const taskRef = await addDoc(collection(db, "tasks"), { ...t, createdBy: currentUser?.name, createdAt: serverTimestamp() });
       await logActivity("إضافة مهمة", form.title);
       if (form.empId && form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تعيين مهمة جديدة لك: ${form.title}`);
-    }
-    // لو فيه مبلغ، نضيفه تلقائياً في المدفوعات
-    if (form.amount && form.clientId && !form.id) {
-      await addDoc(collection(db, "payments"), {
-        clientId: form.clientId, amount: parseFloat(form.amount),
-        type: "كاش", status: form.amountStatus || "لم يدفع",
-        date: form.due || new Date().toISOString().split("T")[0],
-        notes: `مهمة: ${form.title}`, createdBy: currentUser?.name, createdAt: serverTimestamp()
-      });
+      if (form.empId2 && form.empId2 !== currentUser?.id) await sendNotification(form.empId2, `تم تعيين مهمة جديدة لك: ${form.title}`);
+      // لو فيه مبلغ، نضيفه تلقائياً في المدفوعات ونربطه بالموظف والمهمة (ربط في الاتجاهين)
+      if (form.amount && form.clientId) {
+        const paymentRef = await addDoc(collection(db, "payments"), {
+          clientId: form.clientId, empId: form.empId || "", empId2: form.empId2 || "",
+          amount: parseFloat(form.amount),
+          type: "كاش", status: form.amountStatus || "لم يدفع",
+          date: form.due || new Date().toISOString().split("T")[0],
+          notes: `مهمة: ${form.title}`, linkedTaskId: taskRef.id, createdBy: currentUser?.name, createdAt: serverTimestamp()
+        });
+        await updateDoc(doc(db, "tasks", taskRef.id), { linkedPaymentId: paymentRef.id });
+      }
     }
     setModal(null);
   }
@@ -508,11 +392,12 @@ function App() {
     }
   }
 
-  async function moveTask(id, status, title, empId) {
+  async function moveTask(id, status, title, empId, empId2) {
     const extra = status === "تم الإنجاز" ? { completedAt: new Date().toISOString().split("T")[0] } : {};
     await updateDoc(doc(db, "tasks", id), { status, updatedBy: currentUser?.name, updatedAt: serverTimestamp(), ...extra });
     await logActivity("تغيير حالة", `${title} ← ${status}`);
     if (empId && empId !== currentUser?.id) await sendNotification(empId, `تم تغيير حالة مهمتك "${title}" إلى ${status}`);
+    if (empId2 && empId2 !== currentUser?.id) await sendNotification(empId2, `تم تغيير حالة مهمتك "${title}" إلى ${status}`);
     if (status === "تم الإنجاز") {
       const msg = MOTIVATIONAL_MSGS[Math.floor(Math.random() * MOTIVATIONAL_MSGS.length)];
       setMotivationMsg(msg);
@@ -602,7 +487,7 @@ function App() {
   async function savePayment() {
     if (!form.clientId || !form.amount) return;
     const p = {
-      clientId: form.clientId, amount: parseFloat(form.amount),
+      clientId: form.clientId, empId: form.empId || "", amount: parseFloat(form.amount),
       type: form.type || "كاش", status: form.status || "مدفوع",
       date: form.date || new Date().toISOString().split("T")[0],
       notes: form.notes || "", createdBy: currentUser?.name, createdAt: serverTimestamp()
@@ -612,6 +497,19 @@ function App() {
     } else {
       await addDoc(collection(db, "payments"), p);
       await logActivity("إضافة مدفوعة", `${getClient(form.clientId)?.name} - ${form.amount} ج.م`);
+      // نسجلها كمهمة منجزة كمان ونربطها بالموظف
+      if (form.empId) {
+        await addDoc(collection(db, "tasks"), {
+          title: `دفعة: ${getClient(form.clientId)?.name} - ${form.amount} ج.م`,
+          empId: form.empId, empId2: "", clientId: form.clientId,
+          status: "تم الإنجاز", priority: "متوسطة",
+          due: p.date, completedAt: p.date,
+          notes: form.notes || "", tags: [],
+          amount: form.amount, amountStatus: p.status,
+          createdBy: currentUser?.name, createdAt: serverTimestamp(), updatedBy: currentUser?.name, updatedAt: serverTimestamp()
+        });
+        if (form.empId !== currentUser?.id) await sendNotification(form.empId, `تم تسجيل دفعة باسمك: ${form.amount} ج.م من ${getClient(form.clientId)?.name}`);
+      }
     }
     setModal(null);
   }
@@ -653,10 +551,11 @@ function App() {
   }
 
   // ========== COMMENTS ==========
-  async function addComment(taskId, taskTitle, empId) {
+  async function addComment(taskId, taskTitle, empId, empId2) {
     if (!newComment.trim()) return;
     await addDoc(collection(db, "comments"), { taskId, text: newComment, user: currentUser?.name, time: serverTimestamp() });
     if (empId && empId !== currentUser?.id) await sendNotification(empId, `تعليق جديد على مهمتك: ${taskTitle}`);
+    if (empId2 && empId2 !== currentUser?.id) await sendNotification(empId2, `تعليق جديد على مهمتك: ${taskTitle}`);
     setNewComment("");
   }
 
@@ -722,7 +621,7 @@ function App() {
 
   // ========== EMPLOYEE RATING ==========
   function getEmployeeRating(empId) {
-    const empTasks = tasks.filter(t => t.empId === empId && t.status === "تم الإنجاز");
+    const empTasks = tasks.filter(t => (t.empId === empId || t.empId2 === empId) && t.status === "تم الإنجاز" && isThisMonth(t.completedAt));
     if (empTasks.length === 0) return { stars: 0, count: 0, onTimePct: 0 };
     const onTimeCount = empTasks.filter(t => {
       if (!t.due) return true;
@@ -747,7 +646,10 @@ function App() {
     const startStr = fmt(weekStart), endStr = fmt(weekEnd);
     const doneLastWeek = tasks.filter(t => t.completedAt && t.completedAt >= startStr && t.completedAt <= endStr);
     const byEmp = {};
-    doneLastWeek.forEach(t => { if (t.empId) byEmp[t.empId] = (byEmp[t.empId] || 0) + 1; });
+    doneLastWeek.forEach(t => {
+      if (t.empId) byEmp[t.empId] = (byEmp[t.empId] || 0) + 1;
+      if (t.empId2) byEmp[t.empId2] = (byEmp[t.empId2] || 0) + 1;
+    });
     let topEmpId = null, topEmpCount = 0;
     Object.entries(byEmp).forEach(([id, c]) => { if (c > topEmpCount) { topEmpCount = c; topEmpId = id; } });
     const byClient = {};
@@ -779,7 +681,7 @@ function App() {
     return entity.viewingBy;
   }
   const getClient = id => clients.find(c => c.id === id);
-  const alerts = tasks.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) <= 3);
+  const alerts = tasks.filter(t => !["تم الإنجاز", "فاقد"].includes(t.status) && t.due && daysDiff(t.due) <= 3);
   const unreadNotifs = notifications.filter(n => !n.read).length;
 
   function playNotifSound() {
@@ -823,19 +725,43 @@ function App() {
   const filtered = useMemo(() => {
     let t = tasks;
     if (!isAdmin) t = t.filter(x => x.empId === currentUser?.id || true);
-    if (filterEmp !== "all") t = t.filter(x => x.empId === filterEmp);
+    if (filterEmp !== "all") t = t.filter(x => x.empId === filterEmp || x.empId2 === filterEmp);
     if (filterTag !== "all") t = t.filter(x => x.tags && x.tags.includes(filterTag));
     if (search.trim()) t = t.filter(x => x.title?.includes(search.trim()));
-    if (sortBy === "due") t = [...t].sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
-    if (sortBy === "priority") {
-      const order = { "عالية": 0, "متوسطة": 1, "منخفضة": 2 };
-      t = [...t].sort((a, b) => (order[a.priority] || 0) - (order[b.priority] || 0));
-    }
-    t = [...t].sort((a, b) => (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1));
+    const priOrder = { "عالية": 0, "متوسطة": 1, "منخفضة": 2 };
+    t = [...t].sort((a, b) => {
+      const pinDiff = (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1);
+      if (pinDiff !== 0) return pinDiff;
+      if (sortBy === "priority") {
+        const pDiff = (priOrder[a.priority] ?? 1) - (priOrder[b.priority] ?? 1);
+        if (pDiff !== 0) return pDiff;
+      }
+      return (a.due || "9999").localeCompare(b.due || "9999") || a.id.localeCompare(b.id);
+    });
     return t;
   }, [tasks, filterEmp, filterTag, search, sortBy, isAdmin, currentUser]);
 
-  const byStatus = st => filtered.filter(t => t.status === st);
+  function isThisMonth(dateStr) {
+    if (!dateStr) return false;
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return dateStr.startsWith(monthKey);
+  }
+
+  const byStatus = st => filtered.filter(t => t.status === st && (st !== "تم الإنجاز" || isThisMonth(t.completedAt)));
+
+  const archivedTasks = useMemo(() => {
+    return tasks
+      .filter(t => t.status === "تم الإنجاز" && t.completedAt && !isThisMonth(t.completedAt))
+      .filter(t => !archiveSearch.trim() || t.title?.includes(archiveSearch.trim()))
+      .filter(t => archiveMonth === "all" || t.completedAt.startsWith(archiveMonth))
+      .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+  }, [tasks, archiveSearch, archiveMonth]);
+
+  const archiveMonths = useMemo(() => {
+    const set = new Set(tasks.filter(t => t.status === "تم الإنجاز" && t.completedAt && !isThisMonth(t.completedAt)).map(t => t.completedAt.slice(0, 7)));
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [tasks]);
 
   function toggleTag(tag) {
     const tgs = form.tags || [];
@@ -859,10 +785,11 @@ function App() {
   }
 
   function exportCSV() {
-    const rows = [["العميل", "المبلغ", "النوع", "الحالة", "التاريخ", "ملاحظات"]];
+    const rows = [["العميل", "الموظف", "المبلغ", "النوع", "الحالة", "التاريخ", "ملاحظات"]];
     payments.forEach(p => {
       const client = getClient(p.clientId);
-      rows.push([client?.name || "", p.amount, p.type, p.status, p.date, p.notes]);
+      const emp = getEmp(p.empId);
+      rows.push([client?.name || "", emp?.name || "", p.amount, p.type, p.status, p.date, p.notes]);
     });
     const csv = rows.map(r => r.join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1022,7 +949,7 @@ function App() {
             {currentUser.photo ? <img src={currentUser.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: currentUser.color, fontWeight: 700, fontSize: 14 }}>{currentUser.name[0]}</span>}
           </div>
 
-          <button style={s.btnP} onClick={() => { setForm({ title: "", empId: "", clientId: "", status: "قيد الانتظار", priority: "متوسطة", due: "", notes: "", tags: [] }); setModal("task"); }}>+ مهمة</button>
+          {isAdmin && <button style={s.btnP} onClick={() => { setForm({ title: "", empId: "", clientId: "", status: "قيد الانتظار", priority: "متوسطة", due: "", notes: "", tags: [] }); setModal("task"); }}>+ مهمة</button>}
           {isAdmin && <button style={s.btnG} onClick={() => { setForm({ name: "", username: "", password: "", role: "employee", color: "#60A5FA", photo: "" }); setModal("emp"); }}>+ موظف</button>}
           {isAdmin && <button style={s.btnG} onClick={() => { setForm({ name: "", phone: "", email: "", notes: "" }); setModal("client"); }}>+ عميل</button>}
           <button style={s.btnG} onClick={() => { setForm({ clientId: "", amount: "", type: "كاش", status: "مدفوع", date: new Date().toISOString().split("T")[0], notes: "" }); setModal("payment"); }}>+ مدفوعة</button>
@@ -1082,8 +1009,8 @@ function App() {
               {[
                 { label: "إجمالي المهام", val: tasks.length, color: "#60A5FA" },
                 { label: "جاري العمل", val: tasks.filter(t => t.status === "جاري العمل").length, color: "#F59E0B" },
-                { label: "تم الإنجاز", val: tasks.filter(t => t.status === "تم الإنجاز").length, color: "#34D399" },
-                { label: "متأخرة", val: tasks.filter(t => t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length, color: "#EF4444" },
+                { label: "تم الإنجاز (الشهر)", val: tasks.filter(t => t.status === "تم الإنجاز" && isThisMonth(t.completedAt)).length, color: "#34D399" },
+                { label: "متأخرة", val: tasks.filter(t => !["تم الإنجاز", "فاقد"].includes(t.status) && t.due && daysDiff(t.due) < 0).length, color: "#EF4444" },
                 { label: "الموظفون", val: employees.length, color: "#F472B6" },
                 { label: "إجمالي المدفوعات", val: `${totalPayments.toLocaleString()} ج`, color: "#34D399" },
               ].map((st, i) => (
@@ -1113,10 +1040,11 @@ function App() {
                 })}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>إنجاز الموظفين</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>إنجاز الموظفين (الشهر ده)</div>
                 {employees.map(e => {
-                  const total = tasks.filter(t => t.empId === e.id).length;
-                  const done = tasks.filter(t => t.empId === e.id && t.status === "تم الإنجاز").length;
+                  const active = tasks.filter(t => (t.empId === e.id || t.empId2 === e.id) && !["تم الإنجاز", "فاقد"].includes(t.status)).length;
+                  const done = tasks.filter(t => (t.empId === e.id || t.empId2 === e.id) && t.status === "تم الإنجاز" && isThisMonth(t.completedAt)).length;
+                  const total = active + done;
                   const pct = total ? Math.round(done / total * 100) : 0;
                   return (
                     <div key={e.id} style={{ marginBottom: 12 }}>
@@ -1187,10 +1115,11 @@ function App() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {byStatus(status).map(task => {
                       const emp = getEmp(task.empId);
+                      const emp2 = getEmp(task.empId2);
                       const client = getClient(task.clientId);
                       const urg = urgencyInfo(task.due);
                       const taskComments = comments.filter(c => c.taskId === task.id);
-                      const canEdit = isAdmin || task.empId === currentUser?.id;
+                      const canEdit = isAdmin || task.empId === currentUser?.id || task.empId2 === currentUser?.id;
                       return (
                         <div key={task.id} className="task-card" style={{ background: "var(--bg-input, #111827)", border: `1px solid ${task.pinned ? "#F59E0B" : urg ? urg.color + "55" : "var(--border-alt, #1E293B)"}`, borderRadius: 10, padding: 12, cursor: "pointer", position: "relative" }} onClick={() => setSelectedTask(task)}>
                           {task.pinned && <span style={{ position: "absolute", top: -7, right: 10, fontSize: 12 }}>📌</span>}
@@ -1200,11 +1129,19 @@ function App() {
                             <span style={{ background: PRI_COLOR[task.priority] + "22", color: PRI_COLOR[task.priority], borderRadius: 5, padding: "1px 6px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{task.priority}</span>
                           </div>
                           {emp && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
                               <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", background: emp.color + "33", border: `1.5px solid ${emp.color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {emp.photo ? <img src={emp.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: emp.color, fontWeight: 700 }}>{emp.name[0]}</span>}
                               </div>
                               <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{emp.name}</span>
+                              {emp2 && (
+                                <>
+                                  <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", background: emp2.color + "33", border: `1.5px solid ${emp2.color}`, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -2 }}>
+                                    {emp2.photo ? <img src={emp2.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: emp2.color, fontWeight: 700 }}>{emp2.name[0]}</span>}
+                                  </div>
+                                  <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>{emp2.name}</span>
+                                </>
+                              )}
                               {client && <span style={{ fontSize: 10, color: "var(--text-secondary, #FFFFFF)" }}>• {client.name}</span>}
                             </div>
                           )}
@@ -1235,7 +1172,7 @@ function App() {
                           {canEdit && (
                             <div style={{ display: "flex", gap: 3, marginTop: 8, flexWrap: "wrap" }}>
                               {STATUSES.filter(s => s !== status).map(s => (
-                                <button key={s} onClick={e => { e.stopPropagation(); moveTask(task.id, s, task.title, task.empId); }}
+                                <button key={s} onClick={e => { e.stopPropagation(); moveTask(task.id, s, task.title, task.empId, task.empId2); }}
                                   style={{ background: STATUS_BG[s], color: STATUS_COLOR[s], border: "none", borderRadius: 4, padding: "2px 5px", fontSize: 8, cursor: "pointer", fontFamily: "inherit" }}>{s}</button>
                               ))}
                               <button onClick={e => { e.stopPropagation(); setForm({ ...task }); setModal("task"); }}
@@ -1263,8 +1200,9 @@ function App() {
         {tab === "employees" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
             {employees.map(emp => {
-              const total = tasks.filter(t => t.empId === emp.id).length;
-              const done = tasks.filter(t => t.empId === emp.id && t.status === "تم الإنجاز").length;
+              const active = tasks.filter(t => (t.empId === emp.id || t.empId2 === emp.id) && !["تم الإنجاز", "فاقد"].includes(t.status)).length;
+              const done = tasks.filter(t => (t.empId === emp.id || t.empId2 === emp.id) && t.status === "تم الإنجاز" && isThisMonth(t.completedAt)).length;
+              const total = active + done;
               const pct = total ? Math.round(done / total * 100) : 0;
               const rating = getEmployeeRating(emp.id);
               return (
@@ -1287,7 +1225,7 @@ function App() {
                     )}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>الإنجاز</span>
+                    <span style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>الإنجاز (الشهر ده)</span>
                     <span style={{ fontSize: 11, color: emp.color, fontWeight: 700 }}>{done}/{total} ({pct}%)</span>
                   </div>
                   <div style={{ background: "var(--border-alt, #1E293B)", borderRadius: 4, height: 5, marginBottom: 10 }}>
@@ -1296,7 +1234,7 @@ function App() {
                   <div style={{ display: "flex", gap: 4 }}>
                     {STATUSES.slice(0, 3).map(st => (
                       <div key={st} style={{ flex: 1, background: STATUS_BG[st], borderRadius: 5, padding: "4px 2px", textAlign: "center" }}>
-                        <div style={{ color: STATUS_COLOR[st], fontSize: 13, fontWeight: 700 }}>{tasks.filter(t => t.empId === emp.id && t.status === st).length}</div>
+                        <div style={{ color: STATUS_COLOR[st], fontSize: 13, fontWeight: 700 }}>{tasks.filter(t => (t.empId === emp.id || t.empId2 === emp.id) && t.status === st).length}</div>
                         <div style={{ color: STATUS_COLOR[st], fontSize: 8, opacity: 0.7 }}>{st.split(" ")[0]}</div>
                       </div>
                     ))}
@@ -1377,7 +1315,7 @@ function App() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border-alt, #1E293B)" }}>
-                    {["العميل", "المبلغ", "النوع", "الحالة", "التاريخ", "بواسطة", ""].map((h, i) => (
+                    {["العميل", "الموظف", "المبلغ", "النوع", "الحالة", "التاريخ", "بواسطة", ""].map((h, i) => (
                       <th key={i} style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)", fontWeight: 600, textAlign: "right" }}>{h}</th>
                     ))}
                   </tr>
@@ -1385,9 +1323,11 @@ function App() {
                 <tbody>
                   {[...payments].sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.id.localeCompare(b.id)).map(p => {
                     const client = getClient(p.clientId);
+                    const emp = getEmp(p.empId);
                     return (
                       <tr key={p.id} style={{ borderBottom: "1px solid var(--bg-panel, #0F172A)" }}>
                         <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{client?.name || "-"}</td>
+                        <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{emp?.name || "-"}</td>
                         <td style={{ padding: "8px 10px", color: "#34D399", fontWeight: 700 }}>{parseFloat(p.amount).toLocaleString()} ج</td>
                         <td style={{ padding: "8px 10px", color: "var(--text-secondary, #FFFFFF)" }}>{p.type}</td>
                         <td style={{ padding: "8px 10px" }}>
@@ -1473,9 +1413,10 @@ function App() {
               <div style={s.card}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary, #FFFFFF)", marginBottom: 14 }}>أداء الموظفين</div>
                 {employees.map(e => {
-                  const total = tasks.filter(t => t.empId === e.id).length;
-                  const done = tasks.filter(t => t.empId === e.id && t.status === "تم الإنجاز").length;
-                  const late = tasks.filter(t => t.empId === e.id && t.status !== "تم الإنجاز" && t.due && daysDiff(t.due) < 0).length;
+                  const active = tasks.filter(t => (t.empId === e.id || t.empId2 === e.id) && !["تم الإنجاز", "فاقد"].includes(t.status)).length;
+                  const done = tasks.filter(t => (t.empId === e.id || t.empId2 === e.id) && t.status === "تم الإنجاز" && isThisMonth(t.completedAt)).length;
+                  const total = active + done;
+                  const late = tasks.filter(t => (t.empId === e.id || t.empId2 === e.id) && !["تم الإنجاز", "فاقد"].includes(t.status) && t.due && daysDiff(t.due) < 0).length;
                   return (
                     <div key={e.id} style={{ marginBottom: 12, padding: 10, background: "var(--bg-input, #111827)", borderRadius: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -1604,6 +1545,39 @@ function App() {
             </div>
           </div>
         )}
+
+        {tab === "archive" && (
+          <div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              <input style={{ ...s.input, flex: 1, minWidth: 180 }} placeholder="🔍 بحث في الأرشيف..." value={archiveSearch} onChange={e => setArchiveSearch(e.target.value)} />
+              <select style={{ ...s.input, width: "auto" }} value={archiveMonth} onChange={e => setArchiveMonth(e.target.value)}>
+                <option value="all">كل الشهور</option>
+                {archiveMonths.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            {archivedTasks.length === 0 && (
+              <div style={{ textAlign: "center", color: "var(--text-secondary, #FFFFFF)", padding: 40 }}>🗄 لسه مفيش حاجة في الأرشيف — المهام المنجزة من الشهور اللي فاتت هتظهر هنا تلقائي</div>
+            )}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 12 }}>
+              {archivedTasks.map(t => {
+                const emp = getEmp(t.empId);
+                const emp2 = getEmp(t.empId2);
+                const client = getClient(t.clientId);
+                return (
+                  <div key={t.id} onClick={() => setSelectedTask(t)} style={{ ...s.card, cursor: "pointer", opacity: 0.85 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{t.title}</span>
+                      <span style={{ background: STATUS_BG["تم الإنجاز"], color: STATUS_COLOR["تم الإنجاز"], borderRadius: 5, padding: "1px 7px", fontSize: 10, whiteSpace: "nowrap" }}>✓ منجزة</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginBottom: 4 }}>👤 {[emp?.name, emp2?.name].filter(Boolean).join(" + ") || "-"}</div>
+                    {client && <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)", marginBottom: 4 }}>🏢 {client.name}</div>}
+                    <div style={{ fontSize: 11, color: "var(--text-secondary, #FFFFFF)" }}>📅 اتنجزت في {t.completedAt}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ===== TASK DETAIL ===== */}
@@ -1618,6 +1592,11 @@ function App() {
             </div>
             {otherViewer(liveTask) && (
               <div style={{ background: "#3B2A0E", color: "#F59E0B", borderRadius: 8, padding: "6px 12px", fontSize: 12, marginBottom: 12 }}>👀 {otherViewer(liveTask)} بيشوف المهمة دي دلوقتي</div>
+            )}
+            {(liveTask.empId || liveTask.empId2) && (
+              <div style={{ fontSize: 12, color: "var(--text-secondary, #FFFFFF)", marginBottom: 10 }}>
+                👤 {[getEmp(liveTask.empId)?.name, getEmp(liveTask.empId2)?.name].filter(Boolean).join(" + ")}
+              </div>
             )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
               <span style={{ background: STATUS_BG[liveTask.status], color: STATUS_COLOR[liveTask.status], borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{liveTask.status}</span>
@@ -1661,8 +1640,8 @@ function App() {
                 {comments.filter(c => c.taskId === selectedTask.id).length === 0 && <div style={{ color: "var(--text-secondary, #FFFFFF)", fontSize: 12 }}>لا توجد تعليقات بعد</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <input style={{ ...s.input, flex: 1 }} placeholder="اكتب تعليق..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => e.key === "Enter" && addComment(selectedTask.id, selectedTask.title, selectedTask.empId)} />
-                <button style={s.btnP} onClick={() => addComment(selectedTask.id, selectedTask.title, selectedTask.empId)}>إرسال</button>
+                <input style={{ ...s.input, flex: 1 }} placeholder="اكتب تعليق..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => e.key === "Enter" && addComment(selectedTask.id, selectedTask.title, selectedTask.empId, selectedTask.empId2)} />
+                <button style={s.btnP} onClick={() => addComment(selectedTask.id, selectedTask.title, selectedTask.empId, selectedTask.empId2)}>إرسال</button>
               </div>
             </div>
           </div>
@@ -1786,7 +1765,7 @@ function App() {
       {/* ===== EMPLOYEE DETAIL (تُظهر مهام الموظف) ===== */}
       {selectedEmp && (() => {
         const liveEmp = employees.find(e => e.id === selectedEmp.id) || selectedEmp;
-        const empTasks = tasks.filter(t => t.empId === selectedEmp.id).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+        const empTasks = tasks.filter(t => t.empId === selectedEmp.id || t.empId2 === selectedEmp.id).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
         const rating = getEmployeeRating(selectedEmp.id);
         return (
           <div style={s.overlay} onClick={() => setSelectedEmp(null)}>
@@ -1872,6 +1851,10 @@ function App() {
               <select style={s.input} value={form.empId || ""} onChange={e => setForm({ ...form, empId: e.target.value })}>
                 <option value="">-- اختر موظف --</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+              <select style={s.input} value={form.empId2 || ""} onChange={e => setForm({ ...form, empId2: e.target.value })}>
+                <option value="">-- موظف إضافي (اختياري) --</option>
+                {employees.filter(e => e.id !== form.empId).map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
               <select style={s.input} value={form.clientId || ""} onChange={e => setForm({ ...form, clientId: e.target.value })}>
                 <option value="">-- بدون عميل --</option>
@@ -2030,6 +2013,10 @@ function App() {
               <select style={s.input} value={form.clientId || ""} onChange={e => setForm({ ...form, clientId: e.target.value })}>
                 <option value="">-- اختر عميل --</option>
                 {sortedClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <select style={s.input} value={form.empId || ""} onChange={e => setForm({ ...form, empId: e.target.value })}>
+                <option value="">-- الموظف المسؤول (اختياري) --</option>
+                {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
               <input style={s.input} type="number" placeholder="المبلغ (ج.م) *" value={form.amount || ""} onChange={e => setForm({ ...form, amount: e.target.value })} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
